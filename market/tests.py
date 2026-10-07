@@ -240,3 +240,50 @@ class JobTests(TestCase):
         job.refresh_from_db()
         self.assertNotIn('secret', job.message)
         self.assertEqual(job.status, 'failed')
+
+
+class ImportEdgeTests(TestCase):
+    def test_malformed_header_is_a_validation_error(self):
+        with self.assertRaisesMessage(ValidationError, 'CSV 格式错误'):
+            import_csv(b'"unterminated\n')
+        self.assertFalse(Product.objects.exists())
+
+    def test_oversized_header_is_a_validation_error(self):
+        with self.assertRaisesMessage(ValidationError, 'CSV 格式错误'):
+            import_csv(b'x' * 140000 + b'\n')
+
+    def test_duplicate_and_empty_headers_are_rejected(self):
+        for header in ['title,url,price,price,currency,observed_at', 'title,url,price,currency,observed_at,']:
+            with self.subTest(header=header), self.assertRaises(ValidationError):
+                import_csv((header + '\na,https://example.com/1,1,2,USD,2026-10-01T00:00:00Z\n').encode())
+        self.assertFalse(Product.objects.exists())
+
+    def test_out_of_range_utc_dates_leave_database_unchanged(self):
+        for date in ['0001-01-01T00:00:00+08:00', '9999-12-31T23:59:59-08:00']:
+            content = HEADER + ROW + ROW.replace('2026-10-01T10:00:00+08:00', date)
+            with self.subTest(date=date), self.assertRaisesMessage(ValidationError, '观测时间'):
+                import_csv(content.encode())
+        self.assertFalse(Product.objects.exists())
+        self.assertFalse(Snapshot.objects.exists())
+
+    def test_invalid_header_upload_shows_error_instead_of_server_error(self):
+        user = get_user_model().objects.create_user('import-check', password='test-password')
+        self.client.force_login(user)
+        file = SimpleUploadedFile('invalid.csv', b'"unterminated\n')
+        response = self.client.post(reverse('csv_import'), {'file': file})
+        self.assertContains(response, 'CSV 格式错误')
+
+
+class CollectorEdgeTests(TestCase):
+    def test_non_string_currencies_produce_useful_failure(self):
+        for currency in [None, 123, [], {}]:
+            html = '<script type="application/ld+json">' + json.dumps({
+                '@type': 'Product', 'offers': {'price': '9.90', 'priceCurrency': currency}}) + '</script>'
+            with self.subTest(currency=currency), self.assertRaisesMessage(CollectionError, '未提供'):
+                parse_product(html)
+
+    def test_malformed_offer_does_not_hide_valid_offer(self):
+        html = '<script type="application/ld+json">' + json.dumps({
+            '@type': 'Product', 'offers': [{'price': '9.90', 'priceCurrency': None},
+                                          {'price': '9.90', 'priceCurrency': 'USD'}]}) + '</script>'
+        self.assertEqual(parse_product(html)['price'], Decimal('9.90'))

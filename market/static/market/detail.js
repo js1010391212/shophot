@@ -8,7 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
       color: ["#2563eb"],
       tooltip: {trigger: "axis", renderMode: "richText"},
       grid: {left: 65, right: 25, top: 25, bottom: 65},
-      xAxis: {type: "category", data: data.dates.map(date => new Date(date).toLocaleString("zh-CN"))},
+      // 与网页快照表使用相同时区，避免用户电脑时区改变观测时间的展示。
+      xAxis: {type: "category", data: data.dates.map(date => new Date(date).toLocaleString("zh-CN", {timeZone: data.timezone}))},
       yAxis: {type: "value", scale: true},
       dataZoom: [{type: "inside"}, {type: "slider", height: 20, bottom: 5}],
       series: [{name: "观测价格", type: "line", data: data.prices.map(Number),

@@ -60,9 +60,9 @@ title,url,platform,shop,price,currency,sales,observed_at,source
 示例商品,https://example.com/item/1,Other,示例店铺,19.90,USD,,2026-10-01T10:00:00+08:00,csv
 ```
 
-- 必填 `title,url,price,currency,observed_at`，其他列可省略。UTF-8 编码，支持 BOM，最大 2 MB / 5000 行。
+- 必填 `title,url,price,currency,observed_at`，其他列可省略。表头不能有重复或空白字段。UTF-8 编码，支持 BOM，最大 2 MB / 5000 行。
 - 币种为三个英文字母；价格非负、最多两位小数；销量未知留空。
-- 时间使用 ISO 8601，推荐包含时区；无时区按 `Asia/Shanghai` 解释。
+- 时间使用 ISO 8601，推荐包含时区；无时区按 `Asia/Shanghai` 解释。图表与快照表统一使用该时区，不随浏览器时区改变。
 - 商品按链接识别。重复导入会更新名称、平台、店铺，保留备注。
 - 快照按“商品 + 观测时间 + source”去重；同键导入会更新价格、币种和销量。
 - source 默认 `csv`，支持 `web` 和 `demo`，用于保留导出来源。这是用户提供的来源标签，不代表平台认证。
@@ -105,6 +105,20 @@ title,url,platform,shop,price,currency,sales,observed_at,source
 ```
 
 测试使用独立测试数据库，采集 HTTP 使用受控模拟响应，覆盖业务成功与失败路径，不依赖外站。真实速卖通商品采集需要在网络可达并提供有效商品链接后单独验证；测试通过不代表外站采集已成功。
+
+### 浏览器自检（可选）
+
+自检自动创建临时数据库、账号和独立端口，启动测试网页与 worker，完成后清理，不修改现有数据库。安装浏览器测试依赖后运行：
+
+```bash
+.venv/bin/python -m pip install -r requirements-dev.txt
+.venv/bin/python -m playwright install chromium
+.venv/bin/python scripts/browser_smoke.py
+```
+
+Linux 缺少浏览器系统依赖时，可按 Playwright 官方要求安装：`python -m playwright install --with-deps chromium`。已安装系统 Chromium 时无需下载浏览器，可使用 `--chromium /usr/bin/chromium`。
+
+用 `--artifacts /tmp/shophot-selfcheck-artifacts` 可保存详情和手机截图。脚本覆盖登录与退出、商品添加编辑、真实 worker 的失败反馈、CSV 错误提示和重复导入、导出、HTMX 利润计算，以及美国浏览器时区下的图表一致性。截图和测试产物请保存在仓库外。单元测试不需要安装 Playwright。
 
 ## 目录
 

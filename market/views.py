@@ -7,6 +7,7 @@ from django.core.paginator import Paginator
 from django.db.models import OuterRef, Q, Subquery
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from .forms import ImportForm, ProductForm, ProfitForm
 from .importing import COLUMNS, import_csv, safe_csv_cell
@@ -71,7 +72,8 @@ def product_detail(request, pk):
     # 图表限制最近 500 点；保留全部数据库历史，导出不受此限制。
     points = list(selected[:500])[::-1]
     chart = {"dates": [p.observed_at.isoformat() for p in points], "prices": [str(p.price) for p in points],
-             "sources": [p.get_source_display() for p in points]}
+             "sources": [p.get_source_display() for p in points],
+             "timezone": timezone.get_current_timezone_name()}
     change = None
     if len(points) >= 2 and points[0].price != 0:
         change = ((points[-1].price - points[0].price) / points[0].price * 100).quantize(Decimal("0.01"))

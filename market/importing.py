@@ -2,6 +2,7 @@
 import csv
 import io
 import logging
+from datetime import timezone as datetime_timezone
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -20,8 +21,16 @@ def import_csv(content):
     except UnicodeDecodeError:
         raise ValidationError("请使用 UTF-8 编码的 CSV 文件。")
     reader = csv.DictReader(io.StringIO(text, newline=""), strict=True)
-    if not REQUIRED.issubset(reader.fieldnames or []):
-        raise ValidationError("缺少字段：" + ", ".join(sorted(REQUIRED)))
+    # DictReader 首次读取 fieldnames 才解析表头，因此这里也必须捕获 CSV 错误。
+    try:
+        headers = reader.fieldnames or []
+    except csv.Error as exc:
+        raise ValidationError("CSV 格式错误，请检查表头字段的引号与长度。") from exc
+    if len(headers) != len(set(headers)) or any(not header.strip() for header in headers):
+        raise ValidationError("CSV 表头不能有重复或空白字段，请使用下载的模板。")
+    missing = REQUIRED - set(headers)
+    if missing:
+        raise ValidationError("缺少字段：" + ", ".join(sorted(missing)))
     rows = []
     try:
         for line, raw in enumerate(reader, start=2):
@@ -42,6 +51,11 @@ def import_csv(content):
                     raise ValidationError("观测时间须为 ISO 8601，例如 2026-10-01T10:00:00+08:00。")
                 if timezone.is_naive(date):
                     date = timezone.make_aware(date)
+                # 提前验证 UTC 可表示范围，防止极端时区使日期在数据库写入时溢出。
+                try:
+                    date = date.astimezone(datetime_timezone.utc)
+                except (OverflowError, ValueError) as exc:
+                    raise ValidationError("观测时间超出可保存范围，请检查日期和时区。") from exc
                 sales_text = row.get("sales", "")
                 if sales_text and (not sales_text.isascii() or not sales_text.isdigit() or int(sales_text) > 2147483647):
                     raise ValidationError("销量须为空或非负整数（最大 2147483647）。")

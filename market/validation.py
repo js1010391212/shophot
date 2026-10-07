@@ -31,6 +31,9 @@ def clean_price(value):
 
 
 def clean_currency(value):
+    # 第三方 JSON 字段可能为 null、数字或对象，不能直接当字符串处理。
+    if not isinstance(value, str):
+        raise ValidationError("币种须为三个英文字母，例如 USD、CNY。")
     currency = value.strip().upper()
     if not re.fullmatch(r"[A-Z]{3}", currency):
         raise ValidationError("币种须为三个英文字母，例如 USD、CNY。")
