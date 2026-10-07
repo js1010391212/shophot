@@ -287,3 +287,155 @@ class CollectorEdgeTests(TestCase):
             '@type': 'Product', 'offers': [{'price': '9.90', 'priceCurrency': None},
                                           {'price': '9.90', 'priceCurrency': 'USD'}]}) + '</script>'
         self.assertEqual(parse_product(html)['price'], Decimal('9.90'))
+
+
+class CompetitorTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user('competitor-check', password='test-password')
+        self.client.force_login(self.user)
+        self.first = Product.objects.create(title='竞品 A', url='https://example.com/competitor-a')
+        self.second = Product.objects.create(title='竞品 B', url='https://example.com/competitor-b')
+        self.now = timezone.now()
+
+    def observe(self, product, price, currency='USD', days=0, **fields):
+        return Snapshot.objects.create(product=product, price=price, currency=currency, source='manual',
+                                       observed_at=self.now - timedelta(days=days), **fields)
+
+    def test_manual_observation_repeatable_with_optional_metrics(self):
+        data = {'price': '19.90', 'currency': 'usd', 'observed_at': '2026-10-07T10:00:00',
+                'rating': '4.80', 'review_count': '123', 'sales': '', 'context': '美国 / 黑色 / 不含运费'}
+        url = reverse('observation_add', args=[self.first.pk])
+        self.assertEqual(self.client.post(url, data).status_code, 302)
+        self.client.post(url, data)
+        item = Snapshot.objects.get()
+        self.assertEqual(item.source, 'manual')
+        self.assertEqual(item.rating, Decimal('4.80'))
+        self.assertIsNone(item.sales)
+        self.assertEqual(item.currency, 'USD')
+        self.assertEqual(item.review_count, 123)
+        self.assertContains(self.client.get(reverse('product_detail', args=[self.first.pk])), '美国 / 黑色')
+
+    def test_manual_invalid_rating_and_anonymous_access(self):
+        url = reverse('observation_add', args=[self.first.pk])
+        response = self.client.post(url, {'price': '10', 'currency': 'USD', 'observed_at': '2026-10-07T10:00:00', 'rating': '6'})
+        self.assertTrue(response.context['form'].errors)
+        self.assertFalse(Snapshot.objects.exists())
+        # 最大允许价格应以 Decimal 精确校验，不被浮点舍入误拒绝。
+        data = {'price': '9999999999.99', 'currency': 'USD', 'observed_at': '2026-10-07T10:00:00'}
+        self.assertEqual(self.client.post(url, data).status_code, 302)
+        self.client.logout()
+        self.assertEqual(self.client.get(url).status_code, 302)
+        self.assertEqual(self.client.get(reverse('compare')).status_code, 302)
+        self.assertEqual(self.client.post(reverse('analyze_competitor')).status_code, 302)
+
+    def test_compare_currency_window_and_price_change(self):
+        self.observe(self.first, 10, days=4, rating=Decimal('4.5'), review_count=10)
+        self.observe(self.first, 8, days=1)
+        self.observe(self.first, 20, days=60)
+        self.observe(self.first, 70, currency='CNY')
+        self.observe(self.second, 11)
+        response = self.client.get(reverse('compare'), {'products': [self.first.pk, self.second.pk], 'currency': 'USD', 'days': '7'})
+        self.assertEqual(response.status_code, 200)
+        rows = {row['product'].pk: row for row in response.context['rows']}
+        self.assertEqual(rows[self.first.pk]['latest'].price, Decimal('8.00'))
+        self.assertEqual(rows[self.first.pk]['change'], Decimal('-20.00'))
+        points = next(series['points'] for series in response.context['chart']['series'] if series['product_id'] == self.first.pk)
+        self.assertEqual([point[1] for point in points], ['10.00', '8.00'])
+
+    def test_compare_invalid_selection_and_missing_currency_data(self):
+        self.observe(self.first, 1)
+        self.observe(self.second, 7, currency='CNY')
+        response = self.client.get(reverse('compare'), {'products': [self.first.pk, self.second.pk], 'currency': 'USD', 'days': '0'})
+        self.assertContains(response, '窗口内无该币种数据')
+        for ids in [[self.first.pk], [999999], [self.first.pk, self.second.pk, 999999]]:
+            response = self.client.get(reverse('compare'), {'products': ids, 'currency': 'USD', 'days': '0'})
+            self.assertTrue(response.context['form'].errors)
+            self.assertFalse(response.context['rows'])
+
+    def test_compare_chart_limit_does_not_change_window_start(self):
+        Snapshot.objects.bulk_create([Snapshot(product=self.first, price=i+1, currency='USD', source='manual',
+                                              observed_at=self.now - timedelta(minutes=501-i)) for i in range(501)])
+        response = self.client.get(reverse('compare'), {'products': [self.first.pk, self.second.pk], 'currency': 'USD', 'days': '0'})
+        row = next(row for row in response.context['rows'] if row['product'].pk == self.first.pk)
+        self.assertEqual(row['change'], Decimal('50000.00'))
+        self.assertEqual(len(response.context['chart']['series'][0]['points']), 500)
+
+    def test_csv_optional_competitor_metrics_and_roundtrip(self):
+        content = HEADER.strip() + ',rating,review_count,context\n' + ROW.strip() + ',4.80,120,黑色规格\n'
+        import_csv(content.encode())
+        snapshot = Snapshot.objects.get()
+        self.assertEqual(snapshot.rating, Decimal('4.80'))
+        self.assertEqual(snapshot.review_count, 120)
+        self.assertEqual(import_csv(self.client.get(reverse('csv_export')).content), (0, 1))
+        snapshot.refresh_from_db()
+        self.assertEqual(snapshot.context, '黑色规格')
+
+    def test_csv_invalid_optional_metrics_roll_back(self):
+        for fields in ['6,1', '4.5,-1', '4.5,1.5']:
+            content = HEADER.strip() + ',rating,review_count\n' + ROW.strip() + ',' + fields + '\n'
+            with self.subTest(fields=fields), self.assertRaises(ValidationError):
+                import_csv(content.encode())
+        self.assertFalse(Snapshot.objects.exists())
+
+    def test_json_ld_rating_and_review_count_are_optional(self):
+        for aggregate, rating, count in [({'ratingValue': '4.8', 'reviewCount': '120'}, Decimal('4.8'), 120),
+                                         ({'ratingValue': 90, 'bestRating': 100, 'reviewCount': 20}, None, 20),
+                                         ({'ratingValue': None, 'reviewCount': -1}, None, None)]:
+            data = {'@type': 'Product', 'name': '公开商品', 'offers': {'price': 10, 'priceCurrency': 'USD'}, 'aggregateRating': aggregate}
+            result = parse_product('<script type="application/ld+json">' + json.dumps(data) + '</script>')
+            self.assertEqual(result['rating'], rating)
+            self.assertEqual(result['review_count'], count)
+            self.assertEqual(result['title'], '公开商品')
+            self.assertIsNone(result['sales'])
+
+    @patch('market.jobs.collect', return_value={'price': Decimal('9.90'), 'currency': 'USD', 'sales': None,
+                                               'rating': Decimal('4.8'), 'review_count': 120, 'title': '识别到的竞品'})
+    def test_input_link_enqueues_and_builds_report(self, mock):
+        url = reverse('analyze_competitor')
+        response = self.client.post(url, {'url': 'https://www.aliexpress.com/item/123.html?tracking=abc'})
+        self.assertEqual(response.status_code, 302)
+        product = Product.objects.get(url='https://www.aliexpress.com/item/123.html')
+        self.assertTrue(run_next())
+        product.refresh_from_db()
+        self.assertEqual(product.title, '识别到的竞品')
+        self.assertContains(self.client.get(response.url), '竞品分析摘要')
+        self.assertContains(self.client.get(response.url), '4.80')
+        self.client.post(url, {'url': 'https://m.aliexpress.com/item/123.html?tracking=other'})
+        self.assertEqual(Product.objects.filter(url=product.url).count(), 1)
+        self.assertEqual(product.jobs.count(), 2)
+
+    def test_auto_analysis_validation_and_csrf(self):
+        url = reverse('analyze_competitor')
+        self.assertEqual(self.client.get(url).status_code, 405)
+        for product_url in ['https://example.com/item/1', 'http://www.aliexpress.com/item/1', 'https://user:password@www.aliexpress.com/item/1']:
+            response = self.client.post(url, {'url': product_url})
+            self.assertEqual(response.status_code, 400)
+        self.assertFalse(CollectionJob.objects.exists())
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.user)
+        self.assertEqual(client.post(url, {'url': 'https://www.aliexpress.com/item/1.html'}).status_code, 403)
+
+    @patch('market.jobs.collect', return_value={'price': Decimal('9.90'), 'currency': 'USD', 'sales': None, 'title': '不应覆盖'})
+    def test_collection_does_not_override_user_title(self, mock):
+        enqueue(self.first)
+        run_next()
+        self.first.refresh_from_db()
+        self.assertEqual(self.first.title, '竞品 A')
+
+
+class TargetIdentityTests(TestCase):
+    def test_recommendation_product_is_not_used_for_target(self):
+        nodes = [
+            {'@type': 'Product', 'url': 'https://www.aliexpress.com/item/999.html', 'offers': {'price': 99, 'priceCurrency': 'USD'}},
+            {'@type': 'Product', 'url': 'https://www.aliexpress.com/item/123.html', 'offers': {'price': 12, 'priceCurrency': 'USD'}},
+        ]
+        html = '<script type="application/ld+json">' + json.dumps(nodes) + '</script>'
+        self.assertEqual(parse_product(html, target_url='https://www.aliexpress.com/item/123.html')['price'], Decimal('12'))
+        with self.assertRaises(CollectionError):
+            parse_product(html, target_url='https://www.aliexpress.com/item/888.html')
+
+    def test_ambiguous_products_without_identity_fail(self):
+        nodes = [{'@type': 'Product', 'offers': {'price': price, 'priceCurrency': 'USD'}} for price in [10, 20]]
+        html = '<script type="application/ld+json">' + json.dumps(nodes) + '</script>'
+        with self.assertRaisesMessage(CollectionError, '多个商品'):
+            parse_product(html)

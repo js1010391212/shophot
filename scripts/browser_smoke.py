@@ -49,6 +49,21 @@ def check_pages(base_url, executable, artifacts, password):
         print("PASS 历史图表、7 个观测点与跨时区一致性", flush=True)
 
         page.get_by_role("link", name="商品分析", exact=True).click()
+        page.get_by_label("竞品商品链接", exact=False).fill("https://www.aliexpress.com/item/1234567890123.html?tracking=test")
+        page.get_by_role("button", name="开始分析", exact=True).click()
+        page.get_by_role("heading", name="测试夹具 · 自动识别竞品", exact=True).wait_for(timeout=15000)
+        page.get_by_role("heading", name="竞品分析摘要 · USD", exact=True).wait_for()
+        assert "4.80" in page.locator("main").inner_text()
+        print("PASS 输入竞品链接、受控 HTML 采集夹具、自动标题与分析报告（非实站）", flush=True)
+        page.get_by_role("link", name="竞品对比", exact=True).click()
+        page.get_by_label("演示 · 无线降噪耳机", exact=False).check()
+        page.get_by_label("演示 · 便携咖啡杯", exact=False).check()
+        page.get_by_label("观测窗口", exact=False).select_option("0")
+        page.get_by_role("button", name="生成对比", exact=True).click()
+        page.wait_for_function("window.echarts && echarts.getInstanceByDom(document.getElementById('compare-chart'))")
+        assert page.evaluate("echarts.getInstanceByDom(document.getElementById('compare-chart')).getOption().series.length") == 2
+        print("PASS 两件竞品价格对比与图表", flush=True)
+        page.get_by_role("link", name="商品分析", exact=True).click()
         page.get_by_role("link", name="＋ 添加商品", exact=True).click()
         page.get_by_label("商品名称", exact=False).fill("浏览器验证商品")
         page.get_by_label("商品链接", exact=False).fill("https://example.com/browser-check")
@@ -64,6 +79,15 @@ def check_pages(base_url, executable, artifacts, password):
         page.locator(".badge.failed").wait_for(timeout=15000)
         assert "仅支持" in page.locator("main").inner_text()
         print("PASS 商品新增、编辑、真实 worker 执行与失败反馈", flush=True)
+        page.get_by_role("link", name="记录公开数据", exact=True).click()
+        page.get_by_label("公开价格", exact=False).fill("12.50")
+        page.get_by_label("公开评分（5 分制，可留空）", exact=False).fill("4.50")
+        page.get_by_label("公开评价数（未知留空）", exact=False).fill("80")
+        page.get_by_label("报价条件 / 规格", exact=False).fill("测试记录 / 黑色规格 / 不含运费")
+        page.get_by_role("button", name="保存观测", exact=True).click()
+        page.get_by_text("公开页面观测已保存。", exact=True).wait_for()
+        assert "手动记录公开页面" in page.locator("main").inner_text()
+        print("PASS 手动观测、评分、评价数与报价条件留存", flush=True)
 
         page.get_by_role("link", name="导入数据", exact=True).click()
         upload = page.get_by_label("CSV 文件（UTF-8，最大 2 MB）", exact=False)
@@ -143,11 +167,24 @@ def run(executable, artifacts):
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
         base_url = f"http://127.0.0.1:{port}"
+        (temp / "smoke_worker.py").write_text(
+            "import django\ndjango.setup()\n"
+            "from unittest.mock import patch\n"
+            "from django.core.management import call_command\n"
+            "from market.collectors import collect, parse_product\n"
+            "from pathlib import Path\n"
+            "def controlled_collect(url):\n"
+            "    if url == 'https://www.aliexpress.com/item/1234567890123.html':\n"
+            f"        return parse_product(Path({str(ROOT / 'examples/fixtures/competitor_product.html')!r}).read_text(), target_url=url)\n"
+            "    return collect(url)\n"
+            "with patch('market.jobs.collect', side_effect=controlled_collect):\n"
+            "    call_command('collect_worker')\n", encoding="utf-8")
         processes = []
         with (temp / "processes.log").open("w") as output:
             try:
-                for command in [["runserver", f"127.0.0.1:{port}", "--noreload"], ["collect_worker"]]:
-                    processes.append(subprocess.Popen([sys.executable, "manage.py", *command], cwd=ROOT,
+                for command in [[sys.executable, "manage.py", "runserver", f"127.0.0.1:{port}", "--noreload"],
+                                [sys.executable, str(temp / "smoke_worker.py")]]:
+                    processes.append(subprocess.Popen(command, cwd=ROOT,
                                                        env=environment, stdout=output, stderr=output))
                 # 禁用代理仅用于本机就绪请求，外网采集仍保留平台的网络代理。
                 opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))

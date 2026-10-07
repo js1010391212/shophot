@@ -38,3 +38,22 @@ def clean_currency(value):
     if not re.fullmatch(r"[A-Z]{3}", currency):
         raise ValidationError("币种须为三个英文字母，例如 USD、CNY。")
     return currency
+
+
+def clean_rating(value):
+    """只保存明确的五分制评分；空值与零分不同。"""
+    if value is None or value == "":
+        return None
+    rating = clean_price(value)
+    if rating > 5:
+        raise ValidationError("评分须为 0–5 的数字，最多两位小数。")
+    return rating
+
+
+def clean_count(value, label="评价数"):
+    if value is None or value == "":
+        return None
+    text = str(value)
+    if not text.isascii() or not text.isdigit() or len(text) > 10 or int(text) > 2147483647:
+        raise ValidationError(f"{label}须为空或非负整数（最大 2147483647）。")
+    return int(text)

@@ -3,6 +3,9 @@ from . import views
 
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
+    path("analyze/", views.analyze_competitor, name="analyze_competitor"),
+    path("compare/", views.compare, name="compare"),
+    path("products/<int:pk>/observe/", views.observation_add, name="observation_add"),
     path("products/add/", views.product_edit, name="product_add"),
     path("products/<int:pk>/", views.product_detail, name="product_detail"),
     path("products/<int:pk>/edit/", views.product_edit, name="product_edit"),

@@ -1,0 +1,15 @@
+{% extends 'market/base.html' %}{% load static %}
+{% block title %}竞品对比 · ShopHot{% endblock %}
+{% block content %}
+<div class="heading"><div><p class="eyebrow">COMPETITOR COMPARISON</p><h1>竞品对比</h1><p class="muted">选择同类竞品，比较同币种的公开价格与历史走势。</p></div></div>
+<section class="card"><form method="get">{{ form.as_p }}<button>生成对比</button></form></section>
+{% if rows %}
+<div class="notice">当前币种 {{ currency }}。同币种不代表规格、税费或运费相同，请核对报价条件；不同商品的最新观测时间也可能不同。公开评价数和页面销量不能当作真实订单量。</div>
+<section class="card"><h2>竞品概览</h2><div class="table-wrap"><table><thead><tr><th>商品 / 店铺</th><th>最新价格</th><th>窗口首尾变化</th><th>评分 / 评价数</th><th>来源 / 报价条件</th><th>观测时间</th></tr></thead><tbody>
+{% for row in rows %}<tr><td><a href="{% url 'product_detail' row.product.pk %}">{{ row.product.title }}</a><small>{{ row.product.shop|default:'未知店铺' }}</small></td><td>{% if row.latest %}{{ row.latest.price }} {{ currency }}{% else %}窗口内无该币种数据{% endif %}</td><td>{% if row.change is not None %}{{ row.change }}%{% else %}—{% endif %}</td><td>{% if row.latest %}{{ row.latest.rating|default_if_none:'—' }} / {{ row.latest.review_count|default_if_none:'—' }}{% else %}—{% endif %}</td><td>{% if row.latest %}{{ row.latest.get_source_display }}<small>{{ row.latest.context|default:'未记录报价条件' }}</small>{% else %}—{% endif %}</td><td>{{ row.latest.observed_at|date:'Y-m-d H:i:s' }}</td></tr>{% endfor %}
+</tbody></table></div></section>
+<section class="card"><h2>价格走势 · {{ currency }}</h2><p class="muted">每件商品最多展示最近 500 点，变化率按完整筛选窗口计算；鼠标悬停查看时间、商品与价格。</p>{% if chart.series %}<div class="chart" id="compare-chart"></div>{% else %}<div class="empty">所选窗口暂无价格快照，请先采集或记录真实数据。</div>{% endif %}</section>
+{% endif %}
+{{ chart|json_script:'compare-data' }}
+{% endblock %}
+{% block scripts %}<script src="{% static 'vendor/echarts.min.js' %}" defer></script><script src="{% static 'market/compare.js' %}" defer></script>{% endblock %}

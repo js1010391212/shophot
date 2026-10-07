@@ -1,0 +1,2 @@
+{% extends 'market/base.html' %}
+{% block content %}<section class="card narrow"><h1>输入竞品，生成分析</h1><form method="post">{% csrf_token %}{{ form.as_p }}<button>开始分析</button></form><p class="muted">支持速卖通 HTTPS 商品链接。采集成功后展示公开数据；其他平台可先使用 CSV。</p></section>{% endblock %}

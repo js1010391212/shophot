@@ -8,7 +8,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Snapshot)
 class SnapshotAdmin(admin.ModelAdmin):
-    list_display = ("product", "price", "currency", "sales", "source", "observed_at")
+    list_display = ("product", "price", "currency", "rating", "review_count", "sales", "source", "observed_at")
     list_filter = ("source", "currency")
 
 @admin.register(CollectionJob)

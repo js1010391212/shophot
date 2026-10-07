@@ -6,6 +6,8 @@ if [[ ! -x .venv/bin/python ]]; then
   echo "请先运行 bash scripts/setup.sh" >&2
   exit 1
 fi
+# 更新代码后的新迁移也在启动时应用，避免新页面访问尚未添加的字段。
+.venv/bin/python manage.py migrate --noinput
 .venv/bin/python manage.py check
 .venv/bin/python manage.py collect_worker &
 worker_pid=$!

@@ -32,7 +32,11 @@ def run_next():
     logger.info("开始采集 job=%s product=%s", job.pk, job.product_id)
     try:
         result = collect(job.product.url)
+        # 自动识别标题仅更新尚未命名的商品，不覆盖用户编辑的名称。
+        title = result.pop("title", None)
         with transaction.atomic():
+            if title and job.product.title.startswith("待识别竞品 · "):
+                type(job.product).objects.filter(pk=job.product_id, title=job.product.title).update(title=title)
             Snapshot.objects.create(product=job.product, observed_at=timezone.now(), source=Snapshot.Source.WEB, **result)
             CollectionJob.objects.filter(pk=job.pk).update(status="succeeded", finished_at=timezone.now(),
                                                          message="已保存价格快照。页面未提供的销量保持为空。")

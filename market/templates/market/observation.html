@@ -1,0 +1,4 @@
+{% extends 'market/base.html' %}
+{% block content %}
+<section class="card narrow"><h1>记录公开数据</h1><p><a href="{{ product.url }}" target="_blank" rel="noopener noreferrer">打开 {{ product.title }} 的原始页面 ↗</a></p><div class="notice">只填写你在页面上实际看到的数据；未知评分、评价数和销量请留空。记录国家、规格、是否含税与运费，便于之后比较。来源会标记为“手动记录公开页面”。</div><form method="post">{% csrf_token %}{{ form.as_p }}<div class="actions"><button>保存观测</button><a href="{% url 'product_detail' product.pk %}">返回商品</a></div></form></section>
+{% endblock %}

@@ -23,11 +23,15 @@ class Snapshot(models.Model):
         CSV = "csv", "CSV 导入"
         WEB = "web", "网页采集"
         DEMO = "demo", "演示数据"
+        MANUAL = "manual", "手动记录公开页面"
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="snapshots")
     price = models.DecimalField("价格", max_digits=12, decimal_places=2)
     currency = models.CharField("币种", max_length=3)
     sales = models.PositiveIntegerField("销量（来源提供时）", null=True, blank=True)
+    rating = models.DecimalField("公开评分（5 分制）", max_digits=3, decimal_places=2, null=True, blank=True)
+    review_count = models.PositiveIntegerField("公开评价数", null=True, blank=True)
+    context = models.CharField("报价条件 / 规格", max_length=300, blank=True)
     observed_at = models.DateTimeField("观测时间")
     source = models.CharField(max_length=10, choices=Source.choices)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -35,6 +39,7 @@ class Snapshot(models.Model):
     class Meta:
         ordering = ["-observed_at", "-pk"]
         constraints = [models.CheckConstraint(condition=Q(price__gte=0), name="snapshot_nonnegative_price"),
+                       models.CheckConstraint(condition=Q(rating__isnull=True) | Q(rating__gte=0, rating__lte=5), name="rating_zero_to_five"),
                        models.UniqueConstraint(fields=["product", "observed_at", "source"], name="unique_observation")]
         indexes = [models.Index(fields=["product", "observed_at"])]
 

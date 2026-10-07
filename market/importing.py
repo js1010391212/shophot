@@ -8,10 +8,10 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from .models import Product, Snapshot
-from .validation import clean_currency, clean_price, clean_url
+from .validation import clean_count, clean_currency, clean_price, clean_rating, clean_url
 
 logger = logging.getLogger(__name__)
-COLUMNS = ["title", "url", "platform", "shop", "price", "currency", "sales", "observed_at", "source"]
+COLUMNS = ["title", "url", "platform", "shop", "price", "currency", "sales", "observed_at", "source", "rating", "review_count", "context"]
 REQUIRED = {"title", "url", "price", "currency", "observed_at"}
 
 
@@ -56,15 +56,18 @@ def import_csv(content):
                     date = date.astimezone(datetime_timezone.utc)
                 except (OverflowError, ValueError) as exc:
                     raise ValidationError("观测时间超出可保存范围，请检查日期和时区。") from exc
-                sales_text = row.get("sales", "")
-                if sales_text and (not sales_text.isascii() or not sales_text.isdigit() or int(sales_text) > 2147483647):
-                    raise ValidationError("销量须为空或非负整数（最大 2147483647）。")
+                sales = clean_count(row.get("sales", ""), "销量")
                 source = row.get("source") or Snapshot.Source.CSV
                 if source not in Snapshot.Source.values:
-                    raise ValidationError("source 须为 csv、web 或 demo。")
+                    raise ValidationError("source 须为 csv、web、demo 或 manual。")
+                context = row.get("context", "")
+                if len(context) > 300:
+                    raise ValidationError("报价条件不能超过 300 字。")
                 rows.append({"title": title, "url": clean_url(row["url"]), "platform": platform, "shop": shop,
                              "price": clean_price(row["price"]), "currency": clean_currency(row["currency"]),
-                             "observed_at": date, "sales": int(sales_text) if sales_text else None, "source": source})
+                             "observed_at": date, "sales": sales, "source": source,
+                             "rating": clean_rating(row.get("rating", "")),
+                             "review_count": clean_count(row.get("review_count", "")), "context": context})
             except (ValidationError, ValueError, OverflowError) as exc:
                 message = "; ".join(exc.messages) if isinstance(exc, ValidationError) else "字段格式错误。"
                 raise ValidationError(f"第 {line} 行：{message}") from exc
@@ -79,7 +82,8 @@ def import_csv(content):
                 "title": row["title"], "platform": row["platform"], "shop": row["shop"]})
             _, is_new = Snapshot.objects.update_or_create(
                 product=product, observed_at=row["observed_at"], source=row["source"],
-                defaults={"price": row["price"], "currency": row["currency"], "sales": row["sales"]})
+                defaults={"price": row["price"], "currency": row["currency"], "sales": row["sales"],
+                          "rating": row["rating"], "review_count": row["review_count"], "context": row["context"]})
             created += is_new
             updated += not is_new
     logger.info("CSV 导入完成 rows=%s created=%s updated=%s", len(rows), created, updated)

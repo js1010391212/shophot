@@ -8,7 +8,7 @@
 </head>
 <body>
 <header class="topbar"><a class="brand" href="{% url 'dashboard' %}">Shop<span>Hot</span><small>卖家分析工作台</small></a>
-{% if user.is_authenticated %}<nav><a href="{% url 'dashboard' %}">商品分析</a><a href="{% url 'csv_import' %}">导入数据</a><a href="{% url 'profit' %}">利润工具</a>{% if user.is_staff %}<a href="{% url 'admin:index' %}">管理后台</a>{% endif %}</nav>
+{% if user.is_authenticated %}<nav><a href="{% url 'dashboard' %}">商品分析</a><a href="{% url 'compare' %}">竞品对比</a><a href="{% url 'csv_import' %}">导入数据</a><a href="{% url 'profit' %}">利润工具</a>{% if user.is_staff %}<a href="{% url 'admin:index' %}">管理后台</a>{% endif %}</nav>
 <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="quiet" type="submit">退出 {{ user.username }}</button></form>{% endif %}</header>
 <main>{% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
 {% block content %}{% endblock %}</main>
