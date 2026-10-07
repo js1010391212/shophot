@@ -1,0 +1,4 @@
+{% extends 'market/base.html' %}
+{% block content %}<section class="card narrow"><p class="eyebrow">欢迎回来</p><h1>登录卖家工作台</h1><p class="muted">查看商品历史、管理采集任务与分析运营成本。</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}<button type="submit">登录</button></form>
+<p class="muted">首次使用请运行 <code>python manage.py createsuperuser</code> 创建账号。</p></section>{% endblock %}

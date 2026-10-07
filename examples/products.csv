@@ -1,0 +1,3 @@
+title,url,platform,shop,price,currency,sales,observed_at,source
+演示 · CSV 示例商品,https://example.com/demo/csv,Demo,演示店铺,19.90,USD,,2026-10-01T10:00:00+08:00,demo
+演示 · CSV 示例商品,https://example.com/demo/csv,Demo,演示店铺,18.90,USD,,2026-10-02T10:00:00+08:00,demo
