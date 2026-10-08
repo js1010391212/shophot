@@ -26,7 +26,7 @@ def download(request):
         archive = extension_package()
     except (FileNotFoundError, ValueError):
         return HttpResponse('浏览器扩展资源尚未准备完整，请更新本地 ShopHot 后重试。', status=503)
-    return FileResponse(archive, as_attachment=True, filename='shophot-capture-0.1.0.zip',
+    return FileResponse(archive, as_attachment=True, filename='shophot-capture.zip',
                         content_type='application/zip')
 
 

@@ -18,7 +18,7 @@
 | 评论分析与观测历史 | `review_analysis.py` / `product_reviews.py` / ProductReviewBatch；复用 Snapshot 与已有目录样本 | `product_review_forms.py` / `product_review_views.py` / `product_reviews.html`；导入预览与商品报告入口；复用 review_analysis 图表 | `test_product_reviews.py` / `test_review_analysis.py` / `test_reviews.py`；归属/去重/历史/证据/未知/否定/目录复用 |
 | 候选清单 | `candidates.py`；CatalogCandidate | 清单/编辑模板；现有候选视图下一次修改时可迁出 `views.py` | `test_candidates.py`，归属、重复、恢复、跨目录关联 |
 | 浏览器主动观测 | `browser_capture.py` / `browser_capture_targets.py` / `ebay.py` / `browser_capture_records.py` / 固定资源 `browser_capture_package.py`；Snapshot browser账号归属 | `browser_capture_views.py`、预览/私有报告模板、首页browser_recent私有卡片、独立CSS；Chrome扩展 `extensions/shophot-capture/` | `test_browser_capture*` / `test_ebay.py`，账号/CSRF/签名/幂等/并发/公共数据隔离；Node专项及真实DOM证据，实站范围见扩展README |
-| 物流核算与报价导入 | `shipping.py` / `shipping_forms.py` / `shipping_import.py`；ShippingRate，公开参考独立目录 | `shipping_views.py` / shipping 模板与 partial / `shipping.js` / `shipping.css`，利润内直接选择报价 | `test_shipping.py`，重量边界、燃油基数、币种、尾差、原子导入/日期/公式拒绝/账号隔离；来源与限制见 SHIPPING_MODULE.md |
+| 物流核算与报价导入 | `shipping.py` / `shipping_forms.py` / `shipping_import.py` / `shipping_mapping.py`；ShippingRate，公开参考独立目录 | `shipping_views.py` / shipping 模板与 partial / `shipping.js` / `shipping.css`，利润内直接选择报价 | `test_shipping.py` / `test_shipping_mapping.py`，重量/燃油/币种/尾差、标准模板兼容、自有列及共同值、原行号/日期epoch/公式拒绝、签名归属/CSRF/幂等；来源与限制见 SHIPPING_MODULE.md |
 | 利润工具 | `profit.py` 的 ledger 与定价反算、LogisticsProfitForm（复用 ProfitForm） | `profit.html`、`profit.js`、物流 partial | `test_profit.py`，币种、折扣、逐项舍入对账与实际达标价；物流 POST 重新核算 |
 | 公共界面 | `ui.css`、`ui.js`、`base.html`、`partials/navigation.html`、`partials/research_filters.html` | 导航、布局、表单层级、手机菜单 | 浏览器桌面/移动及键盘验证 |
 | 跟踪价格历史与导入 | Product / Snapshot、`importing.py`、现有视图 | 商品跟踪报告、导入、历史对比 | `tests.py`，快照顺序、导入原子性、CSV 安全 |
@@ -53,3 +53,13 @@ git diff --check
 ```
 
 服务为 `127.0.0.1:8000`，PostgreSQL 配置及启动见 `DATABASE.md`。测试使用单独测试数据库。开发进程采用 `--noreload`，更改 Python 或缓存模板后需重启；不要启动多个 worker。更新静态资源时更改相应版本标记，避免界面仍使用旧缓存。
+
+## 物流自有表格维护边界
+
+现有 `/tools/logistics/import/` 同时支持标准模板直接预览，以及自有CSV/单工作表XLSX的上传→表头/最多3条样本→选择源列或共同值→逐行校验→原签名报价预览→确认保存。不要另建报价库或导入入口；手填路径和标准模板含说明工作表继续兼容。
+
+有界读取与单元格类型在 `shipping_import.py`，临时签名及对应表单在 `shipping_mapping.py`，接线在 `shipping_views.py`。映射目标只使用已有 `COLUMNS` / `ShippingRateForm`，不要根据列名猜金额、国家、币种、计费方式或未知费用。唯一完全一致标准表头可默认对应；共同值必须可见并由用户明确填写，计费方式/燃油基数中文下拉不设默认。日期映射后才按XLSX epoch转换；原行号不能丢失。同一源列不可复用，目标字段allowlist、POST重复字段和签名账号/过期校验必须保留。
+
+本轮仅kg与明确币种的平面报价：2MB、100行、40列，样本和宽表内部横向滚动；复杂矩阵、多工作表选择、单位/汇率推断、公式或AI识别均未接入。扩大格式前应先取得真实货代样本并协调负责人，不松开ZIP/XML/公式/合并/未知字段边界。专项使用独立测试库，失败/空状态须实际浏览器留证，预览和失败不写库；最终全套和主服务统一由负责人执行。详细口径、数据上限和当前证据见 `SHIPPING_MODULE.md`。
+
+原表样本宽表使用独立 `shipping-source-samples` / `shipping-source-scroll` 样式，普通列保持可读最小宽度、行号更窄、长文本限制宽度后换行，溢出只在 `.table-wrap` 内部滚动。不要让继承的任意位置换行把几十列压成逐字表头；实际浏览器同时检查样本区scrollWidth大于clientWidth、整页scrollWidth等于视口，并保留错误提示。改CSS时同步导入页面版本参数。

@@ -65,13 +65,13 @@ test('eBay/AliExpress anonymous Product and missing public Offer identity fail',
     assert.equal(f.read().error,'identity');
   }
 });
-test('candidate eBay semantic adapter only accepts exact single current Offer',()=>{
+test('eBay generic microdata cannot replace the verified main listing region',()=>{
   const f=fixture(), url='https://www.ebay.com/itm/123456789012';f.location.href=url;
   const product={'@type':'Product',url,offers:{'@type':'Offer',url,price:'10.90',priceCurrency:'USD',availability:'https://schema.org/InStock'}};
   const script=node(JSON.stringify(product));f.document.selectors['script[type="application/ld+json"]']=[script];
   const scope=node('',{}, {'[itemprop="price"]':[node('US $10.90')]});
   f.document.selectors.h1[0].closest=s=>s.startsWith('[itemtype=') ? scope : null;
-  assert.equal(f.read().currency,'USD');assert.equal(f.read().referencePrice,'10.90');
+  assert.equal(f.read().error,'identity');
   product.offers['@type']='AggregateOffer';script.textContent=JSON.stringify(product);assert.equal(f.read().error,'identity');
 });
 test('candidate adapters reject every unverified variant mapping',()=>{
