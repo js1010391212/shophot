@@ -135,7 +135,7 @@ class WebTests(TestCase):
         self.assertContains(self.client.get(reverse('csv_template')), 'observed_at')
 
     def test_profit_math_zero_revenue_and_validation(self):
-        data = {'selling_price': '20', 'exchange_rate': '7', 'cost': '50', 'shipping': '20', 'fee_rate': '10', 'other_cost': '6'}
+        data = {'sale_currency': 'USD', 'cost_currency': 'CNY', 'selling_price': '20', 'exchange_rate': '7', 'cost': '50', 'shipping': '20', 'fee_rate': '10', 'other_cost': '6'}
         response = self.client.post(reverse('profit'), data)
         self.assertEqual(response.context['result']['net'], Decimal('50.00'))
         self.assertEqual(response.context['result']['margin'], Decimal('35.71'))
@@ -193,7 +193,7 @@ class CollectorTests(TestCase):
                     collect('https://www.aliexpress.com/item/1.html')
 
     def test_http_success_saves_explicit_price(self):
-        html = '<script type="application/ld+json">{"@type":"Product","offers":{"price":"9.90","priceCurrency":"USD"}}</script>'
+        html = '<script type="application/ld+json">{"@type":"Product","url":"https://www.aliexpress.com/item/1.html","offers":{"@type":"Offer","price":"9.90","priceCurrency":"USD"}}</script>'
         transport = httpx.MockTransport(lambda r: httpx.Response(200, headers={'content-type': 'text/html'}, text=html))
         with patch('market.collectors.httpx.Client', return_value=httpx.Client(transport=transport)), patch(
             'market.collectors.socket.getaddrinfo', return_value=[(2, 1, 6, '', ('8.8.8.8', 443))]):
@@ -398,8 +398,8 @@ class CompetitorTests(TestCase):
         self.assertTrue(run_next())
         product.refresh_from_db()
         self.assertEqual(product.title, '识别到的竞品')
-        self.assertContains(self.client.get(response.url), '竞品分析摘要')
-        self.assertContains(self.client.get(response.url), '4.80')
+        self.assertContains(self.client.get(response.url,follow=True), '竞品分析摘要')
+        self.assertContains(self.client.get(response.url,follow=True), '4.80')
         self.client.post(url, {'url': 'https://m.aliexpress.com/item/123.html?tracking=other'})
         self.assertEqual(Product.objects.filter(url=product.url).count(), 1)
         self.assertEqual(product.jobs.count(), 2)
@@ -426,8 +426,8 @@ class CompetitorTests(TestCase):
 class TargetIdentityTests(TestCase):
     def test_recommendation_product_is_not_used_for_target(self):
         nodes = [
-            {'@type': 'Product', 'url': 'https://www.aliexpress.com/item/999.html', 'offers': {'price': 99, 'priceCurrency': 'USD'}},
-            {'@type': 'Product', 'url': 'https://www.aliexpress.com/item/123.html', 'offers': {'price': 12, 'priceCurrency': 'USD'}},
+            {'@type': 'Product', 'url': 'https://www.aliexpress.com/item/999.html', 'offers': {'@type': 'Offer', 'price': 99, 'priceCurrency': 'USD'}},
+            {'@type': 'Product', 'url': 'https://www.aliexpress.com/item/123.html', 'offers': {'@type': 'Offer', 'price': 12, 'priceCurrency': 'USD'}},
         ]
         html = '<script type="application/ld+json">' + json.dumps(nodes) + '</script>'
         self.assertEqual(parse_product(html, target_url='https://www.aliexpress.com/item/123.html')['price'], Decimal('12'))

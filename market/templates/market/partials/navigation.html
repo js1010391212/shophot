@@ -1,0 +1,13 @@
+<nav id="workspace-navigation" aria-label="主导航">
+<p class="nav-group-label">研究工作区</p>
+<a {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'store_analysis' or request.resolver_match.url_name == 'product_analysis' %}aria-current="page"{% endif %} href="{% url 'dashboard' %}"><span aria-hidden="true">⌂</span>分析首页</a>
+<a {% if request.resolver_match.url_name == 'stores' or request.resolver_match.url_name == 'store_research' %}aria-current="page"{% endif %} href="{% url 'stores' %}"><span aria-hidden="true">▦</span>店铺研究</a>
+<a {% if request.resolver_match.url_name == 'sample_market' or request.resolver_match.url_name == 'catalog_market' or request.resolver_match.url_name == 'catalog_compare' or request.resolver_match.url_name == 'catalog_detail' or request.resolver_match.url_name == 'catalog_history' %}aria-current="page"{% endif %} href="{% url 'catalog_market' %}"><span aria-hidden="true">▤</span>商品研究</a>
+<a {% if request.resolver_match.url_name == 'candidates' or request.resolver_match.url_name == 'candidate_edit' or request.resolver_match.url_name == 'candidate_compare' %}aria-current="page"{% endif %} href="{% url 'candidates' %}"><span aria-hidden="true">☆</span>候选清单</a>
+<a {% if request.resolver_match.url_name == 'price_monitors' or request.resolver_match.url_name == 'monitor_config' %}aria-current="page"{% endif %} href="{% url 'price_monitors' %}"><span aria-hidden="true">◷</span>价格监测</a>
+<p class="nav-group-label">分析工具</p>
+<a {% if request.resolver_match.url_name == 'keyword_research' %}aria-current="page"{% endif %} href="{% url 'keyword_research' %}"><span aria-hidden="true">⌘</span>词条研究</a>
+<a {% if request.resolver_match.url_name == 'profit' %}aria-current="page"{% endif %} href="{% url 'profit' %}"><span aria-hidden="true">∑</span>利润工具</a>
+<a {% if request.resolver_match.url_name == 'shipping' or request.resolver_match.url_name == 'shipping_rate_add' or request.resolver_match.url_name == 'shipping_rate_edit' or request.resolver_match.url_name == 'shipping_import' %}aria-current="page"{% endif %} href="{% url 'shipping' %}"><span aria-hidden="true">⇢</span>物流报价</a>
+<details class="nav-more" {% if request.resolver_match.url_name == 'collection_center' or request.resolver_match.url_name == 'csv_import' or request.resolver_match.url_name == 'compare' %}open{% endif %}><summary>数据管理与历史</summary><a href="{% url 'collection_center' %}">采集任务</a><a href="{% url 'compare' %}">跟踪价格对比</a><a href="{% url 'csv_import' %}">导入数据</a>{% if user.is_staff %}<a href="{% url 'admin:index' %}">管理后台</a>{% endif %}</details>
+</nav>

@@ -1,0 +1,16 @@
+<div data-shipping-inputs>
+<div class="shipping-quote-picker">{{ form.shipping_quote.label_tag }}{{ form.shipping_quote }}{{ form.shipping_quote.errors }}</div>
+<div data-quote-summary class="shipping-quote-summary" aria-live="polite"><p data-quote-description>选择报价后查看线路、币种和适用条件。</p><a data-quote-source hidden target="_blank" rel="noopener noreferrer">查看报价来源</a></div>
+<div class="field-grid">
+<div>{{ form.package_weight.label_tag }}{{ form.package_weight }}{{ form.package_weight.errors }}</div>
+<div>{{ form.package_units.label_tag }}{{ form.package_units }}{{ form.package_units.errors }}</div>
+<div>{{ form.package_length.label_tag }}{{ form.package_length }}{{ form.package_length.errors }}</div>
+<div>{{ form.package_width.label_tag }}{{ form.package_width }}{{ form.package_width.errors }}</div>
+<div>{{ form.package_height.label_tag }}{{ form.package_height }}{{ form.package_height.errors }}</div>
+<div>{{ form.fuel_rate.label_tag }}{{ form.fuel_rate }}{{ form.fuel_rate.errors }}</div>
+<div>{{ form.shipping_extra.label_tag }}{{ form.shipping_extra }}{{ form.shipping_extra.errors }}<p class="helptext" data-shipping-extra-help>金额使用报价币种，按整个包裹填写。</p></div>
+{% if show_cost_currency %}<div>{{ form.cost_currency.label_tag }}{{ form.cost_currency }}{{ form.cost_currency.errors }}</div>{% endif %}
+<div>{{ form.shipping_exchange_rate.label_tag }}{{ form.shipping_exchange_rate }}{{ form.shipping_exchange_rate.errors }}<p class="helptext" data-shipping-fx-help>同币种为 1；不同币种请填写明确的换算方向。</p></div>
+</div>
+<p class="helptext">重量和尺寸使用打包后的整包数据。默认一包一件；多件仅支持同款、均分物流成本。燃油与其他物流费用须核实，明确不收费才填 0。税费只计入一次，已填这里的费用请勿再次计入其他成本。</p>
+</div>

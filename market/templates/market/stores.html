@@ -1,0 +1,32 @@
+{% extends 'market/base.html' %}
+{% block title %}店铺研究 · ShopHot{% endblock %}
+{% block content %}
+<div class="heading"><div><p class="eyebrow">STORE RESEARCH</p><h1>店铺研究</h1><p class="muted">查看已分析的店铺，继续采集并打开对应报告。</p></div><a class="button" href="{% url 'dashboard' %}">＋ 跟踪商品</a></div>
+<section class="card"><h2>发现店铺公开商品</h2><form class="filters" method="post" action="{% url 'discover_store' %}">{% csrf_token %}{{ discovery_form.as_p }}<button>发现商品目录</button></form><p class="muted">读取公开商品目录，最多 100 件。按每批最多 10 件采集公开报价，记录来源与观测时间。</p></section>
+{% for scan in discoveries %}
+<section class="card">
+<div class="heading"><h2>{{ scan.url }}</h2><a class="button secondary" href="{% url 'store_analysis' scan.pk %}">打开分析 / 报告 →</a></div><span class="badge">{{ scan.get_status_display }}</span>
+<p>{{ scan.message|default:'等待采集进程处理；请稍后刷新' }}</p>
+<p class="muted">发现时间：{{ scan.created_at|date:'Y-m-d H:i' }} · 商品链接 {{ scan.products|length }} 个{% if scan.limited %} · 目录截取，未完整扫描{% endif %}</p>
+{% if scan.products %}
+<p><a class="button secondary" href="{% url 'store_research' scan.pk %}">查看词条与商品树 →</a></p>
+<p><strong>价格覆盖 {{ scan.priced_count }} / {{ scan.products|length }}</strong> · 待采集 {{ scan.pending_count }} 件 · 存在采集问题 {{ scan.error_count }} 件</p>
+<form class="filters" method="post" action="{% url 'collect_store_prices' scan.pk %}">{% csrf_token %}
+{% if scan.pending_count %}<button name="mode" value="next">采集下一批（最多 10 件）</button><button name="mode" value="remaining">采集剩余 {{ scan.pending_count }} 件</button>{% endif %}
+{% if scan.error_count %}<button class="secondary" name="mode" value="retry">重试有问题的商品</button>{% endif %}
+{% if scan.priced_count %}<button class="secondary" name="mode" value="refresh">重新观测全部报价</button>{% endif %}</form>
+{% with job=scan.price_jobs.all.0 %}{% if job %}<p role="status"><span class="badge">报价{{ job.get_status_display }}</span> {{ job.processed }} / {{ job.total }} · {{ job.message|default:'请稍后刷新查看进度' }}</p>{% endif %}{% endwith %}
+<p class="muted">页面公开报价可能仅对应部分规格，不含运费和结账优惠；缺货商品也可能公布价格。遇到限流停止，不推算成交价或销量。</p>
+<details class="catalog-directory"><summary>查看 {{ scan.products|length }} 件商品目录</summary><div class="catalog-table"><table><thead><tr><th>商品 / 来源</th><th>页面公开报价</th><th>库存状态</th><th>报价时间</th></tr></thead><tbody>
+{% for item in scan.products %}<tr>
+<td><a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.price_title|default:item.title }} ↗</a><br><a href="{% url 'catalog_detail' scan.pk forloop.counter0 %}">商品详情 →</a>{% if item.price_error %}<small class="catalog-error">{{ item.price_error }}{% if item.price_observed_at %}（保留上次报价）{% endif %}</small>{% endif %}</td>
+<td>{% if item.price_low %}<strong>{{ item.currency }} {{ item.price_low }}{% if item.price_high != item.price_low %} – {{ item.price_high }}{% endif %}</strong>{% else %}<span class="muted">尚未取得</span>{% endif %}</td>
+<td>{% if item.availability == 'InStock' %}有货{% elif item.availability == 'OutOfStock' %}缺货{% elif item.availability == 'PreOrder' %}预售{% elif item.availability == 'Mixed' %}各规格不同{% else %}<span class="muted">未知</span>{% endif %}</td>
+<td>{{ item.price_observed_at|default:'—' }}</td>
+</tr>{% endfor %}</tbody></table></div></details>
+
+{% if scan.recent_quotes %}<details><summary>最近 10 条历史报价</summary><p class="muted">每次成功观测独立保存，重复采集不会覆盖历史。报价范围不能作为单一规格的价格走势。</p><div class="catalog-table"><table><thead><tr><th>商品</th><th>公开报价</th><th>观测时间</th></tr></thead><tbody>{% for quote in scan.recent_quotes %}<tr><td><a href="{{ quote.url }}" target="_blank" rel="noopener noreferrer">{{ quote.title }}</a></td><td>{{ quote.currency }} {{ quote.price_low }}{% if quote.price_low != quote.price_high %} – {{ quote.price_high }}{% endif %}</td><td>{{ quote.observed_at|date:'Y-m-d H:i:s T' }}</td></tr>{% endfor %}</tbody></table></div></details>{% endif %}
+{% endif %}</section>{% endfor %}
+<section class="card"><form class="filters" method="get"><label>店铺或域名<input name="q" value="{{ query }}" placeholder="搜索你关注的店铺"></label><label>平台<select name="platform"><option value="">全部平台</option><option {% if request.GET.platform == 'Shopify' %}selected{% endif %}>Shopify</option><option {% if request.GET.platform == 'AliExpress' %}selected{% endif %}>AliExpress</option></select></label><button>筛选</button><a href="{% url 'stores' %}">重置</a></form><p class="muted">当前 {{ store_count }} 个匹配店铺。仅统计本工作台跟踪样本，不代表店铺总商品数、销量或营收。Shopify 按商品链接域名归组。</p></section>
+<div class="store-grid">{% for store in stores %}<section class="card store-card"><span class="badge">{{ store.platform }}</span><h2>{{ store.name }}</h2><p class="muted">{{ store.domain }}</p><div class="store-metrics"><div><strong>{{ store.count }}</strong><small>跟踪商品 / 规格</small></div><div><strong>{{ store.observed }}</strong><small>已有价格记录</small></div></div><p class="muted">最近观测：{{ store.latest|date:'Y-m-d H:i'|default:'尚未观测' }}</p><div class="store-products">{% for product in store.products %}<a href="{% url 'product_detail' product.pk %}">{{ product.title }} <span>→</span></a>{% endfor %}</div><a class="button secondary" href="{% url 'dashboard' %}?platform={{ store.platform|urlencode }}&q={% if store.platform == 'Shopify' %}{{ store.domain|urlencode }}{% else %}{{ store.name|urlencode }}{% endif %}">查看跟踪商品</a></section>{% empty %}<section class="card empty"><h2>还没有店铺档案</h2><p>添加 Shopify 商品后会按域名自动建立档案；速卖通商品可在编辑页面填写店铺名称。</p><a class="button" href="{% url 'dashboard' %}">开始研究</a></section>{% endfor %}</div>
+{% endblock %}

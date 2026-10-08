@@ -1,0 +1,56 @@
+{% extends 'market/base.html' %}{% load static %}
+{% block title %}{{ title }} · 商品报告 · ShopHot{% endblock %}
+{% block content %}
+<div class="heading">
+  <div><p class="eyebrow">PRODUCT REPORT</p><h1>{{ title }}</h1><p class="muted">{{ scan.url }} · 公开数据商品报告</p></div>
+  <a class="button secondary" href="{% url 'store_research' scan.pk %}">返回词条研究</a>
+</div>
+<div class="report-toolbar">
+  <a class="button secondary" href="{% url 'monitor_config' scan.pk index %}">设置价格监测</a>
+  {% if candidate %}<a class="button secondary" href="{% url 'candidates' %}">已加入候选清单 · 查看</a>{% else %}<form method="post" action="{% url 'candidate_add' scan.pk index %}">{% csrf_token %}<button class="secondary">加入候选清单</button></form>{% endif %}
+  <nav aria-label="报告内容"><a href="#product-content">商品信息</a><a href="#product-variants">规格报价</a><a href="#product-reviews">商品评价</a><a href="#product-history">报价记录</a></nav>
+  <form method="post" action="{% url 'refresh_catalog_product' scan.pk index %}">{% csrf_token %}<button>更新当前商品</button></form>
+</div>
+{% if job %}<p class="notice" role="status">当前商品采集：{{ job.get_status_display }} · {{ job.processed }} / {{ job.total }} · {{ job.message|default:'任务进行中，请稍后刷新页面' }}</p>{% endif %}
+<section class="card product-overview" id="product-content">
+  <div class="product-gallery">
+    {% if item.images %}
+    <a href="{{ item.images.0 }}" target="_blank" rel="noopener noreferrer"><img class="product-main-image" src="{{ item.images.0 }}" alt="{{ title }} 商品图片" referrerpolicy="no-referrer"></a>
+    {% if item.images|length > 1 %}<div class="product-thumbnails">{% for image in item.images %}<a href="{{ image }}" target="_blank" rel="noopener noreferrer"><img src="{{ image }}" alt="{{ title }} 图片 {{ forloop.counter }}" loading="lazy" referrerpolicy="no-referrer"></a>{% endfor %}</div>{% endif %}
+    <small class="muted">原店铺公开图片 · 点击查看原图</small>
+    {% else %}<div class="product-image-empty">尚未取得商品图片<p class="muted">可点击“更新当前商品”读取公开内容</p></div>{% endif %}
+  </div>
+  <div>
+    <h2>公开报价与库存</h2>
+    <p class="product-price">{% if item.price_observed_at %}{{ item.currency }} {{ item.price_low }}{% if item.price_low != item.price_high %} – {{ item.price_high }}{% endif %}{% else %}尚未取得报价{% endif %}</p>
+    <p>页面库存标注：{% include 'market/availability.html' with state=item.availability %}</p>
+    <dl class="product-facts"><dt>品牌</dt><dd>{{ item.brand|default:'尚未取得' }}</dd><dt>页面品类</dt><dd>{{ item.category|default:'尚未取得' }}</dd><dt>商品 SKU</dt><dd>{{ item.sku|default:'尚未取得' }}</dd><dt>观测时间</dt><dd>{{ item.price_observed_at|default:'尚未观测' }}</dd></dl>
+    <p class="muted">这是页面公开报价；规格范围可能不完整，运费、税费及结账优惠未确认。</p>
+    {% if item.price_error %}<p class="catalog-error">最近采集问题：{{ item.price_error }}；已有内容保留其原观测时间。</p>{% endif %}
+    <a class="button secondary" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">查看原店铺商品 ↗</a>
+  </div>
+</section>
+<section class="card"><h2>商品描述</h2>
+  {% if item.description %}<details class="product-description" open><summary>查看店铺原始描述</summary><p>{{ item.description|linebreaksbr }}</p></details>{% if item.description_limited %}<p class="muted">描述仅保留前 6000 个字符，完整内容请查看原商品页面。</p>{% endif %}
+  {% else %}<p class="muted">尚未取得描述。更新当前商品后，可读取页面明确提供的内容。</p>{% endif %}
+</section>
+<section class="card" id="product-variants"><h2>公开规格与报价</h2>
+  <p class="muted">只展示页面明确提供的规格，库存为页面标注。价格范围不作为单一规格成交价。</p>
+  <div class="catalog-table"><table><thead><tr><th>规格 / SKU</th><th>原币种报价</th><th>页面库存</th></tr></thead><tbody>
+  {% for variant in item.variants %}<tr><td><a href="{{ variant.url }}" target="_blank" rel="noopener noreferrer">{{ variant.name }} ↗</a>{% if variant.size or variant.color %}<small class="muted">{{ variant.size }} {{ variant.color }}</small>{% endif %}{% if variant.sku %}<small class="muted">SKU：{{ variant.sku }}</small>{% endif %}</td><td>{{ variant.currency }} {{ variant.price_low }}{% if variant.is_range %} – {{ variant.price_high }} <span class="badge">范围报价</span>{% endif %}</td><td>{% include 'market/availability.html' with state=variant.availability %}</td></tr>
+  {% empty %}<tr><td colspan="3">尚未取得规格明细；可更新当前商品，未公开的规格不会推算。</td></tr>{% endfor %}
+  </tbody></table></div>{% if item.variants_limited %}<p class="muted">仅展示前 100 条公开规格报价。</p>{% endif %}
+</section>
+<section class="card" id="product-reviews"><h2>商品评价数据</h2>
+  <div class="research-metrics"><div><strong>{% if has_rating %}{{ item.rating }} / 5{% else %}尚未取得{% endif %}</strong><p class="muted">商品评分</p></div><div><strong>{% if has_review_count %}{{ item.review_count }}{% else %}尚未取得{% endif %}</strong><p class="muted">评价数</p></div><div><strong>{% if has_rating_count %}{{ item.rating_count }}{% else %}尚未取得{% endif %}</strong><p class="muted">评分人数</p></div><div><strong>{{ item.review_samples|length }}</strong><p class="muted">已取得评论样本</p></div></div>
+  <p class="muted">未取得不等于没有评价。商品评价与店铺评价独立，评论样本数量不代表评价总数。</p>
+  {% if item.review_source %}<p class="muted">来源：<a href="{{ item.review_source }}" target="_blank" rel="noopener noreferrer">公开商品页面 ↗</a> · 汇总评分来自商品结构化数据{% if item.review_sample_source %} · 评论样本来自{{ item.review_sample_source }}{% endif %} · 观测：{{ item.price_observed_at }}</p>{% endif %}
+  {% if item.review_samples_limited %}<p class="muted">仅取得页面公开的部分评论，最多保留 10 条；不用于推断完整评价分布。</p>{% endif %}
+  {% include 'market/review_analysis.html' %}
+  {% for review in item.review_samples %}<article class="product-review" id="review-sample-{{ forloop.counter0 }}" tabindex="-1">{% if review.title %}<h3>{{ review.title }}</h3>{% endif %}<p>{{ review.body }}</p><small class="muted">{{ review.date|default:'未提供评价日期' }}{% if review.rating != None %} · {{ review.rating }} / 5{% endif %}</small></article>{% empty %}<p>还没有可明确归属该商品的评论样本，暂不生成评价主题分析。</p>{% endfor %}
+</section>
+<section class="card"><h2>标题词条</h2><p>{% for term in terms %}<a class="badge" href="{% url 'store_research' scan.pk %}?term={{ term|urlencode }}">{{ term }}</a> {% empty %}尚未提取{% endfor %}</p><p class="muted">由标题提取，点击查看同店相关商品；不是市场搜索量。</p></section>
+<section class="card" id="product-history"><div class="heading compact"><h2>最近报价记录</h2><a class="button secondary" href="{% url 'catalog_history' scan.pk index %}">查看报价历史分析 →</a></div><p class="muted">最多显示 20 次成功观测。记录是各次公开规格范围，不能当作某一规格成交价；没有历史数据时不推算走势。</p><div class="catalog-table"><table><thead><tr><th>观测时间</th><th>原币种公开报价</th><th>来源</th></tr></thead><tbody>{% for quote in quotes %}<tr><td>{{ quote.observed_at|date:'Y-m-d H:i:s T' }}</td><td>{{ quote.currency }} {{ quote.price_low }}{% if quote.price_low != quote.price_high %} – {{ quote.price_high }}{% endif %}</td><td><a href="{{ quote.url }}" target="_blank" rel="noopener noreferrer">公开商品页面 ↗</a></td></tr>{% empty %}<tr><td colspan="3">暂无独立历史记录；目录已有报价请看上方观测时间。</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'vendor/echarts.min.js' %}" defer></script><script src="{% static 'market/review_analysis.js' %}" defer></script>{% endblock %}

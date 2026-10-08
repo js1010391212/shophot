@@ -1,2 +1,2 @@
 {% extends 'market/base.html' %}
-{% block content %}<section class="card narrow"><h1>{{ heading }}</h1><p class="muted">添加商品后可导入历史数据，或尝试采集速卖通公开商品页面。</p><form method="post">{% csrf_token %}{{ form.as_p }}<div class="actions"><button type="submit">保存商品</button><a href="{% url 'dashboard' %}">返回列表</a></div></form></section>{% endblock %}
+{% block content %}<section class="card narrow"><h1>{{ heading }}</h1><p class="muted">选择平台并填写完整商品链接。速卖通与 Shopify 支持公开数据采集；OTTO 商品可导入已保存的页面文件；其他平台可导入 CSV 或手动记录价格。</p><form method="post">{% csrf_token %}{{ form.as_p }}<div class="actions"><button type="submit">保存商品</button><a href="{% url 'dashboard' %}">返回列表</a></div></form></section>{% endblock %}

@@ -1,5 +1,6 @@
 """开发默认配置；部署时通过环境变量设置密钥、域名和 HTTPS。"""
 import os
+import json
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
 
@@ -26,6 +27,19 @@ TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIR
 WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3",
                          "OPTIONS": {"timeout": 20}}}
+# 本机初始化脚本生成的配置已排除 Git；环境变量仍可覆盖用于部署。
+local_db_file = BASE_DIR / '.local' / 'database.json'
+local_db = json.loads(local_db_file.read_text()) if local_db_file.exists() else {}
+if os.getenv('SHOPHOT_DB_ENGINE', local_db.get('engine', 'sqlite')) == 'postgresql':
+    DATABASES = {"default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("SHOPHOT_DB_NAME", local_db.get("name", "shophot")),
+        "USER": os.getenv("SHOPHOT_DB_USER", local_db.get("user", "shophot")),
+        "PASSWORD": os.getenv("SHOPHOT_DB_PASSWORD", local_db.get("password", "")),
+        "HOST": os.getenv("SHOPHOT_DB_HOST", local_db.get("host", "127.0.0.1")),
+        "PORT": os.getenv("SHOPHOT_DB_PORT", local_db.get("port", "55432")),
+        "CONN_MAX_AGE": 60,
+    }}
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},

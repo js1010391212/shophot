@@ -1,0 +1,18 @@
+.shipping-rate-list { margin-top:24px; }
+.shipping-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.shipping-actions form { margin:0; }
+.shipping-quote-picker { margin-bottom:12px; }
+.shipping-quote-summary { background:var(--bg); padding:14px; border:1px solid var(--border); border-radius:8px; margin:12px 0 20px; overflow-wrap:anywhere; font-size:13px; }
+.shipping-quote-summary p { margin:0 0 8px; white-space:pre-line; }
+.shipping-calculation .cost-breakdown { grid-template-columns:minmax(0,1fr) auto; column-gap:12px; }
+.shipping-calculation dd { overflow-wrap:anywhere; text-align:right; }
+.shipping-calculation details { margin:16px 0; }
+.shipping-calculation details p { font-size:13px; }
+.shipping-calculation>p { overflow-wrap:anywhere; }
+.shipping-form { max-width:980px; }
+.shipping-wide { grid-column:1 / -1; }
+.shipping-rate-list td small { display:block; color:var(--muted); margin-top:5px; }
+.shipping-rate-list td { max-width:320px; overflow-wrap:anywhere; }
+.shipping-inline-link { display:inline-block; margin:10px 0; }
+[data-shipping-panel][hidden], [data-shipping-manual][hidden], [data-shipping-profit-link][hidden] { display:none !important; }
+@media(max-width:560px) { .shipping-calculation .cost-breakdown { font-size:12px; } .shipping-calculation dd { max-width:145px; } }

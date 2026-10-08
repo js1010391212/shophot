@@ -1,0 +1,1 @@
+{% extends 'market/base.html' %}{% block content %}<section class="card"><h1>店铺商品发现</h1><form method="post" action="{% url 'discover_store' %}">{% csrf_token %}{{ form.as_p }}<button>发现商品目录</button></form></section>{% endblock %}

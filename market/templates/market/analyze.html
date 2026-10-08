@@ -1,2 +1,2 @@
 {% extends 'market/base.html' %}
-{% block content %}<section class="card narrow"><h1>输入竞品，生成分析</h1><form method="post">{% csrf_token %}{{ form.as_p }}<button>开始分析</button></form><p class="muted">支持速卖通 HTTPS 商品链接。采集成功后展示公开数据；其他平台可先使用 CSV。</p></section>{% endblock %}
+{% block content %}<section class="card narrow"><h1>输入竞品，生成分析</h1><form method="post">{% csrf_token %}{{ form.as_p }}<button>开始分析</button></form><p class="muted">支持速卖通商品、Shopify 商品和 HTTPS 店铺首页；首页先发现公开商品目录。Shopify 多规格商品需带 variant 编号。采集成功后展示公开价格；OTTO 商品进入页面文件导入并预览；SHEIN/Ozon 尚未接入自动分析，其他平台可使用 CSV。</p></section>{% endblock %}

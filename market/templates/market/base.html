@@ -1,17 +1,8 @@
 {% load static %}<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}ShopHot · 卖家分析工作台{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'market/app.css' %}">
-  <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
-</head>
-<body>
-<header class="topbar"><a class="brand" href="{% url 'dashboard' %}">Shop<span>Hot</span><small>卖家分析工作台</small></a>
-{% if user.is_authenticated %}<nav><a href="{% url 'dashboard' %}">商品分析</a><a href="{% url 'compare' %}">竞品对比</a><a href="{% url 'csv_import' %}">导入数据</a><a href="{% url 'profit' %}">利润工具</a>{% if user.is_staff %}<a href="{% url 'admin:index' %}">管理后台</a>{% endif %}</nav>
-<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="quiet" type="submit">退出 {{ user.username }}</button></form>{% endif %}</header>
-<main>{% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
-{% block content %}{% endblock %}</main>
-<footer>ShopHot v0.1 · 数据来源与观测时间可追溯 · 不同币种不直接比较</footer>
-{% block scripts %}{% endblock %}
-</body></html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}ShopHot · 卖家分析工作台{% endblock %}</title><link rel="stylesheet" href="{% static 'market/app.css' %}?v=20261008-candidates"><link rel="stylesheet" href="{% static 'market/ui.css' %}?v=3"><script src="{% static 'vendor/htmx.min.js' %}" defer></script><script src="{% static 'market/ui.js' %}?v=2" defer></script></head>
+<body class="{% if user.is_authenticated %}workspace{% endif %}"><a class="skip-link" href="#main-content">跳到页面内容</a>
+<header class="topbar"><div class="sidebar-brand"><a class="brand" href="{% url 'dashboard' %}"><b class="brand-mark" aria-hidden="true">S</b><span>ShopHot<small>选品研究工作台</small></span></a>{% if user.is_authenticated %}<button class="nav-toggle quiet" type="button" aria-controls="workspace-navigation" aria-expanded="false">菜单</button>{% endif %}</div>
+{% if user.is_authenticated %}{% include 'market/partials/navigation.html' %}<div class="sidebar-account"><small>{{ user.username }}</small><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="quiet" type="submit">退出登录</button></form></div>{% endif %}</header>
+<main id="main-content">{% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}{% block content %}{% endblock %}</main>
+<footer>ShopHot · 公开数据有来源 · 不同币种独立分析</footer>{% block scripts %}{% endblock %}</body></html>
