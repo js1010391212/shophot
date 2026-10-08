@@ -40,12 +40,14 @@ def dashboard(request):
     params = request.GET.copy()
     params.pop("page", None)
     from .catalog_research import latest_catalogs
+    from .browser_capture_records import home_summary
     recent_scans=list(StoreDiscovery.objects.filter(pk=Subquery(StoreDiscovery.objects.filter(url=OuterRef('url')).order_by('-created_at','-pk').values('pk')[:1]))[:6])
     for scan in recent_scans:
         scan.priced_count=sum(bool(p.get('price_observed_at')) for p in scan.products)
     return render(request, "market/dashboard.html", {
         'recent_scans':recent_scans,'catalog_count':sum(len(s.products) for s in latest_catalogs()),
         'candidate_count':CatalogCandidate.objects.filter(owner=request.user,active=True).count(),
+        'browser_home': home_summary(request.user),
         "page": page, "query_string": params.urlencode(), "analyze_form": AnalyzeForm(allow_store=True),
         "total": Product.objects.count(), "snapshot_count": Snapshot.objects.count(),
         "active_jobs": CollectionJob.objects.filter(status__in=["queued", "running"]).count(),
@@ -222,23 +224,10 @@ def analyze_competitor(request):
     form = AnalyzeForm(request.POST, allow_store=True)
     if form.is_valid():
         url = form.cleaned_data["url"]
-        if form.cleaned_data['platform'] == 'eBay':
+        platform = form.cleaned_data['platform']
+        if platform in ('eBay', 'OTTO') or (platform == 'AliExpress' and '?sku_id=' in url):
             from .browser_capture_views import start_browser_research
-            return start_browser_research(request, url, 'eBay')
-        if form.cleaned_data['platform'] == 'AliExpress' and '?sku_id=' in url:
-            product,_=Product.objects.get_or_create(url=url,defaults={'title':'待识别竞品 · '+urlsplit(url).path.rsplit('/',1)[-1],'platform':'AliExpress'})
-            if product.platform != 'AliExpress':
-                messages.error(request,'已有商品的平台与链接不一致，请先核对资料。')
-                return redirect('product_detail',pk=product.pk)
-            messages.info(request,'已保留速卖通规格编号，请导入已保存的商品页面；未创建自动采集任务。')
-            return redirect('page_import',pk=product.pk)
-        if form.cleaned_data['platform'] == 'OTTO':
-            product,_=Product.objects.get_or_create(url=url,defaults={'title':'待识别竞品 · '+urlsplit(url).path.rsplit('/',2)[-2][:80],'platform':'OTTO'})
-            if product.platform != 'OTTO':
-                messages.error(request,'该链接已保存为其他平台，请先核对商品资料。')
-                return redirect('product_detail',pk=product.pk)
-            messages.info(request,'已建立 OTTO 研究入口。自动采集遇到安全验证，未创建任务；请导入正常保存的页面或手动记录。')
-            return redirect('otto_import',pk=product.pk)
+            return start_browser_research(request, url, platform)
         if form.cleaned_data['platform'] == 'Shopify' and urlsplit(url).path in ('', '/'):
             from .workflows import start_store_analysis
             scan=start_store_analysis(url)

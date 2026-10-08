@@ -7,6 +7,7 @@ from django.core.exceptions import RequestDataTooBig, ValidationError
 from django.db import transaction
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .browser_capture import parse_capture, sign_preview
@@ -32,13 +33,17 @@ def download(request):
 def start_browser_research(request, url, platform):
     """由首页已校验的POST调用，创建明确入口，不触发HTTP采集。"""
     from urllib.parse import urlsplit
+    identifier = urlsplit(url).path.rstrip('/').rsplit('/', 1)[-1]
+    if platform == 'OTTO':
+        identifier = identifier.rsplit('-', 1)[-1]
+    identifier = identifier.removesuffix('.html')
     product, _ = Product.objects.get_or_create(url=url, defaults={
-        'platform': platform, 'title': '待识别竞品 · ' + urlsplit(url).path.rsplit('/', 1)[-1],
+        'platform': platform, 'title': '待识别竞品 · ' + identifier,
     })
     if product.platform != platform:
         messages.error(request, '已有商品的平台与链接不一致，请先核对商品资料。')
         return redirect('product_detail', pk=product.pk)
-    messages.info(request, '已建立 eBay 研究入口。请在正常商品页选择规格，使用 ShopHot 扩展采集并核对保存。')
+    messages.info(request, '商品已准备好。请打开原商品页，选择规格，用 ShopHot 扩展采集并确认报价。')
     return redirect('browser_report', pk=product.pk)
 
 
@@ -90,7 +95,10 @@ def preview(request):
             if product.platform != platform:
                 raise ValidationError('已有商品平台与链接不一致，请先核对商品资料。')
             token = sign_preview(raw, product.url, owner_id=request.user.pk, product_pk=product.pk)
-        return render(request, 'market/browser_capture.html', {'product': product, 'capture': capture, 'preview': token})
+        return render(request, 'market/browser_capture.html', {
+            'product': product, 'capture': capture, 'preview': token,
+            'capture_time': parse_datetime(capture['observed_at']),
+        })
     except ValidationError as exc:
         return _error(request, exc)
 
@@ -106,7 +114,7 @@ def confirm(request, pk):
         return _error(request, exc)
     except Product.DoesNotExist:
         return _error(request, ValidationError('商品已删除，请重新采集。'))
-    messages.success(request, '已保存到我的浏览器观测。' if created else '此观测已保存，未重复新增。')
+    messages.success(request, '已保存到我的报价记录。' if created else '此观测已保存，未重复新增。')
     return redirect('browser_report', pk=observation.product_id)
 
 
@@ -119,5 +127,5 @@ def report(request, pk):
     from django.core.paginator import Paginator
     page = Paginator(rows, 50).get_page(request.GET.get('page'))
     return render(request, 'market/browser_report.html', {
-        'product': product, 'groups': private_groups(page.object_list), 'page': page,
+        'product': product, 'groups': private_groups(page.object_list), 'page': page, 'latest': rows.first(),
     })

@@ -1,22 +1,22 @@
-{% extends 'market/base.html' %}{% load static %}
+{% extends 'market/base.html' %}{% load static tz %}
 {% block title %}浏览器报价预览 · ShopHot{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'market/browser_capture.css' %}?v=1"><div class="browser-capture">
-<div class="heading"><div><p class="eyebrow">浏览器主动观测</p><h1>{% if capture %}核对这次报价{% else %}接收浏览器报价{% endif %}</h1></div></div>
+<link rel="stylesheet" href="{% static 'market/browser_capture.css' %}?v=2"><div class="browser-capture">
+<div class="heading"><div><p class="eyebrow">浏览器采集</p><h1>{% if capture %}核对这次报价{% else %}从浏览器采集报价{% endif %}</h1></div></div>
 {% if error %}<div class="notice" role="alert">{{ error }} 未保存观测。请回到原商品页重新点击采集。</div>{% endif %}
 {% if capture %}
-<section class="card"><h2>{{ capture.title }}</h2><p><a href="{{ capture.url }}" target="_blank" rel="noopener noreferrer">{{ capture.url }}</a></p>
-<div class="stats"><div><span>当前报价</span><strong>{{ capture.price }} {{ capture.currency }}</strong></div><div><span>规格编号</span><strong>{{ capture.sku_id|default_if_none:'未知' }}</strong></div><div><span>收货国家</span><strong>{{ capture.market_country|default_if_none:'未知' }}</strong></div></div>
-<p>原始观测时间：{{ capture.observed_at }}</p><p>来源：浏览器主动观测 · {{ capture.adapter_version }}</p>
+<section class="card"><h2>{{ capture.title }}</h2><p><a href="{{ capture.url }}" target="_blank" rel="noopener noreferrer">打开原商品页核对 ↗</a></p>
+<p class="capture-price">{{ capture.price }} <span>{{ capture.currency }}</span></p>
+<p class="capture-meta">{{ capture_time|timezone:'Asia/Shanghai'|date:'Y-m-d H:i' }} · 北京时间<br>收货国家：{{ capture.market_country|default_if_none:'未知' }} · 规格编号：{{ capture.sku_id|default_if_none:'未知' }}</p>
 <h3>页面报价条件</h3><ul>{% for condition in capture.conditions %}<li>{{ condition }}</li>{% empty %}<li>未知；没有提供条件不代表没有优惠、税费或运费限制。</li>{% endfor %}</ul>
-<h3>可见报价证据</h3><p>{{ capture.evidence|linebreaksbr }}</p>
-<div class="notice">尚未保存。以上是客户端声明，不能证明页面真实性；请对照原页面核对商品、规格、金额与条件。确认后仅当前账号可在浏览器观测报告中查看。</div>
+<details><summary>查看原始页面证据</summary><p>{{ capture.evidence|linebreaksbr }}</p><p>原始观测时间：{{ capture.observed_at }}</p><p>来源：浏览器主动观测 · {{ capture.adapter_version }}</p><p>以上内容由客户端提供，不能证明页面真实性。</p></details>
+<div class="notice">尚未保存。请对照原页面核对商品、规格、金额与条件。确认后保存到「我的报价记录」，仅你可见。</div>
 <form method="post" action="{% url 'browser_capture_confirm' product.pk %}">{% csrf_token %}<input type="hidden" name="preview" value="{{ preview }}"><button>确认并保存报价</button> <a href="{% url 'browser_report' product.pk %}">取消，查看我的记录</a></form>
 </section>
 {% else %}
 <section class="card"><h2>从正常商品页采集</h2><p>在 Chrome 打开商品、正常登录并选好规格，点击 ShopHot 扩展采集。报价会直接进入预览，核对确认后保存，无需复制 HTML。</p>
 <p><a class="button" href="{% url 'browser_capture_download' %}">下载 Chrome 扩展</a></p>
-<details><summary>首次安装与使用</summary><ol><li>解压下载的安装包，在 Chrome 扩展管理页打开开发者模式，选择「加载已解压的扩展程序」，选中 shophot-capture 文件夹。</li><li>先在同一 Chrome 登录 <a href="http://127.0.0.1:8000/" target="_blank" rel="noopener noreferrer">本地 ShopHot</a>，固定扩展图标；在正常商品页选择规格并点击采集。</li><li>本地页面展示商品、规格、报价和条件；核对后点击确认保存，再进入我的浏览器观测报告。</li></ol><p>扩展在用户点击时读取当前商品，临时数据只发送至本机 127.0.0.1:8000。Chrome 扩展安装后的完整联调尚待验收。OTTO 两件商品及灯笼两种规格已核对；速卖通和 eBay 适配尚未通过实站验收，所选规格无法确认时会拒绝采集。请正常完成平台登录或验证后重试。</p></details>
+<details><summary>首次安装与使用</summary><ol><li>解压下载的安装包，在 Chrome 扩展管理页打开开发者模式，选择「加载已解压的扩展程序」，选中 shophot-capture 文件夹。</li><li>先在同一 Chrome 登录 <a href="http://127.0.0.1:8000/" target="_blank" rel="noopener noreferrer">本地 ShopHot</a>，固定扩展图标；在正常商品页选择规格并点击采集。</li><li>本地页面展示商品、规格、报价和条件；核对后点击确认保存，再进入我的报价记录。</li></ol><p>扩展在用户点击时读取当前商品，临时数据只发送至本机 127.0.0.1:8000。Chrome 扩展安装后的完整联调尚待验收。OTTO 两件商品及灯笼两种规格已核对；速卖通和 eBay 适配尚未通过实站验收，所选规格无法确认时会拒绝采集。请正常完成平台登录或验证后重试。</p></details>
 <details><summary>高级：手动校验采集 JSON</summary>
 <form id="browser-capture-form" method="post"{% if bridge_ready %} data-browser-capture-bridge="ready"{% endif %}>{% csrf_token %}
 <label>目标商品链接<input name="target_url" type="url" maxlength="500" required></label>

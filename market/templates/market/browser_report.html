@@ -1,13 +1,15 @@
-{% extends 'market/base.html' %}{% load static %}
-{% block title %}我的浏览器观测 · ShopHot{% endblock %}
+{% extends 'market/base.html' %}{% load static tz %}
+{% block title %}我的报价记录 · ShopHot{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'market/browser_capture.css' %}?v=1"><div class="browser-capture">
-<a href="{% url 'product_detail' product.pk %}">← 公共商品报告</a>
-<div class="heading"><div><p class="eyebrow">仅当前账号 · {{ product.platform }}</p><h1>我的浏览器观测</h1><p>{{ product.title }}</p></div><a class="button secondary" href="{% url 'browser_capture' %}">接收新报价</a></div>
-<p class="notice">原始报价按币种与完整条件分别列出，不换算、不跨规格或条件计算涨跌。国家、规格或条件未知时，不能确认报价可比较。客户端声明不证明页面真实性。</p>
-{% for group in groups %}<section class="card"><h2>{{ group.currency }} · 规格 {{ group.sku_id|default_if_none:'未知' }} · 国家 {{ group.market_country|default_if_none:'未知' }}</h2><p>报价类型：当前报价</p><ul>{% for condition in group.conditions %}<li>{{ condition }}</li>{% empty %}<li>报价条件未知</li>{% endfor %}</ul>
-<div class="table-wrap"><table><thead><tr><th>原观测时间（含时区）</th><th>价格</th><th>来源 / 原商品</th><th>可见证据</th></tr></thead><tbody>{% for row in group.rows %}<tr><td>{{ row.capture_data.observed_at }}</td><td>{{ row.price }} {{ row.currency }}</td><td>{{ row.get_source_display }}<small>{{ row.capture_data.adapter_version }}</small><a href="{{ row.capture_data.url }}" target="_blank" rel="noopener noreferrer">原商品链接 ↗</a></td><td>{{ row.capture_data.title }}<small>{{ row.capture_data.evidence|linebreaksbr }}</small></td></tr>{% endfor %}</tbody></table></div></section>
-{% empty %}<section class="card"><h2>还没有你的浏览器观测</h2><p><a href="{{ product.url }}" target="_blank" rel="noopener noreferrer">打开原商品页 ↗</a>，选择规格后点击 ShopHot 扩展采集。核对预览并确认后，记录会出现在这里。其他账号的观测不会显示。</p></section>{% endfor %}
+<link rel="stylesheet" href="{% static 'market/browser_capture.css' %}?v=2"><div class="browser-capture">
+<a href="{% url 'dashboard' %}">← 返回首页</a>
+<div class="heading"><div><p class="eyebrow">仅你可见 · {{ product.platform }}</p><h1>我的报价记录</h1><p>{% if latest %}{{ latest.capture_data.title }}{% else %}{{ product.title }}{% endif %}</p></div><div class="actions"><a class="button" href="{{ product.url }}" target="_blank" rel="noopener noreferrer">打开商品并采集 ↗</a><a class="button secondary" href="{% url 'browser_capture' %}">安装采集扩展</a></div></div>
+<p class="muted">在原商品页选好规格，点击 ShopHot 扩展采集，核对预览后确认保存。</p>
+{% if latest %}<section class="card capture-quote-top"><div><span class="muted">最新保存的报价</span><p class="capture-price">{{ latest.price }} <span>{{ latest.currency }}</span></p><p class="capture-meta">{{ latest.observed_at|timezone:'Asia/Shanghai'|date:'Y-m-d H:i' }} · 北京时间</p></div><p class="muted">共 {{ page.paginator.count }} 条记录<br><a href="{% url 'product_detail' product.pk %}">查看公共商品报告 →</a></p></section>{% endif %}
+<p class="notice">不同币种、规格和报价条件分别展示。国家或条件未知时，不能确认价格可比较；这里的记录仅当前账号可见。</p>
+{% for group in groups %}<section class="card"><h2>{{ group.currency }} 报价记录</h2><p class="capture-meta">收货国家：{{ group.market_country|default_if_none:'未知' }} · 规格编号：{{ group.sku_id|default_if_none:'未知' }}</p><ul>{% for condition in group.conditions %}<li>{{ condition }}</li>{% empty %}<li>报价条件未知</li>{% endfor %}</ul>
+<div class="table-wrap"><table><thead><tr><th>报价</th><th>采集时间（北京时间）</th><th>商品与页面证据</th></tr></thead><tbody>{% for row in group.rows %}<tr><td><strong>{{ row.price }} {{ row.currency }}</strong></td><td><time datetime="{{ row.capture_data.observed_at }}">{{ row.observed_at|timezone:'Asia/Shanghai'|date:'Y-m-d' }}<small>{{ row.observed_at|timezone:'Asia/Shanghai'|date:'H:i' }}</small></time></td><td>{{ row.capture_data.title }}<details><summary>查看原始证据</summary><p>{{ row.capture_data.evidence|linebreaksbr }}</p><p>来源：{{ row.get_source_display }} · {{ row.capture_data.adapter_version }}</p><p>原始观测时间：{{ row.capture_data.observed_at }}</p><p>以上内容由客户端提供，不能证明页面真实性。</p><a href="{{ row.capture_data.url }}" target="_blank" rel="noopener noreferrer">打开原商品页核对 ↗</a></details></td></tr>{% endfor %}</tbody></table></div></section>
+{% empty %}<section class="card"><h2>还没有保存报价</h2><p>打开原商品页，选择规格后点击 ShopHot 扩展采集。核对预览并确认后，记录会出现在这里。</p><p>首次使用请先安装上方的采集扩展。速卖通和 eBay 的实站采集仍在验证，遇到登录或访问验证请正常完成后重试。</p></section>{% endfor %}
 {% if page.paginator.num_pages > 1 %}<div class="pagination">第 {{ page.number }} / {{ page.paginator.num_pages }} 页{% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">上一页</a>{% endif %}{% if page.has_next %}<a href="?page={{ page.next_page_number }}">下一页</a>{% endif %}</div>{% endif %}
 </div>
 {% endblock %}

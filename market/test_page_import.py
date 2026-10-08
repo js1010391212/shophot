@@ -108,7 +108,7 @@ class PageImportFlowTests(TestCase):
         target=URL+'?sku_id=123'
         response=self.client.post(reverse('analyze_competitor'),{'platform':'Auto','url':target})
         product=Product.objects.get(url=target)
-        self.assertRedirects(response,reverse('page_import',args=[product.pk]))
+        self.assertRedirects(response,reverse('browser_report',args=[product.pk]))
         self.client.post(reverse('collect_product',args=[product.pk]));self.assertFalse(CollectionJob.objects.exists())
         job=CollectionJob.objects.create(product=product)
         with patch('market.jobs.collect') as collect:run_next();collect.assert_not_called()

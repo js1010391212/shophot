@@ -6,6 +6,7 @@ from threading import Barrier
 from unittest.mock import patch
 from urllib.parse import urlencode
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -82,6 +83,9 @@ class BrowserFlowTests(TestCase):
         self.assertNotContains(response, '<script>private evidence</script>')
         self.assertContains(response, '尚未保存')
         self.assertEqual(Product.objects.get().title, '待识别竞品 · 1005001234567890')
+        at = timezone.localtime(response.context['capture_time'], ZoneInfo('Asia/Shanghai'))
+        self.assertContains(response, at.strftime('%Y-%m-%d %H:%M'))
+        self.assertContains(response, self.data['observed_at'])
 
     def test_preview_failure_does_not_create_product(self):
         self.product.delete()
@@ -139,6 +143,9 @@ class BrowserFlowTests(TestCase):
         report = self.client.get(reverse('browser_report', args=[self.product.pk]))
         self.assertContains(report, '&lt;script&gt;private evidence&lt;/script&gt;')
         self.assertContains(report, '报价条件未知')
+        at = timezone.localtime(row.observed_at, ZoneInfo('Asia/Shanghai'))
+        self.assertContains(report, at.strftime('%Y-%m-%d %H:%M'))
+        self.assertContains(report, self.data['observed_at'])
 
     def test_conflicting_content_and_product_never_overwrite(self):
         original = self.save()
@@ -182,7 +189,7 @@ class BrowserFlowTests(TestCase):
         self.assertEqual(len(response.context['groups'][0]['rows']), 1)
         third = get_user_model().objects.create_user(username='empty')
         self.client.force_login(third)
-        self.assertContains(self.client.get(reverse('browser_report', args=[self.product.pk])), '还没有你的浏览器观测')
+        self.assertContains(self.client.get(reverse('browser_report', args=[self.product.pk])), '还没有保存报价')
         self.assertFalse(Snapshot.objects.exists())
         self.assertFalse(self.product.snapshots.exists())
 
@@ -201,7 +208,7 @@ class BrowserFlowTests(TestCase):
         Snapshot.objects.create(product=self.product, price='12.34', currency='USD', source='manual', observed_at=timezone.now()-timedelta(days=1))
         other_product = Product.objects.create(title='other', url='https://example.org/product')
         Snapshot.objects.create(product=other_product, price='10', currency='USD', source='manual', observed_at=timezone.now())
-        paths = [reverse('product_detail', args=[self.product.pk]), reverse('csv_export'), reverse('dashboard'),
+        paths = [reverse('product_detail', args=[self.product.pk]), reverse('csv_export'),
                  reverse('compare')+'?'+urlencode({'products': [self.product.pk, other_product.pk], 'currency': 'USD', 'days': 0}, doseq=True),
                  reverse('profit')+'?product='+str(self.product.pk), reverse('product_reviews', args=[self.product.pk])]
         for path in paths:
@@ -218,6 +225,44 @@ class BrowserFlowTests(TestCase):
                 self.assertEqual(str(response.context['form'].initial['selling_price']), '12.34')
         self.assertEqual(self.product.snapshots.count(), 1)
         self.assertEqual(Snapshot.objects.count(), 2)
+        home = self.client.get(reverse('dashboard'))
+        self.assertEqual(home.context['snapshot_count'], 2)
+        self.assertEqual(home.context['browser_home']['count'], 1)
+        self.assertContains(home, '987.65')
+        self.assertNotContains(home, 'private evidence')
+        self.client.force_login(self.other)
+        other_home = self.client.get(reverse('dashboard'))
+        self.assertEqual(other_home.context['browser_home']['count'], 0)
+        self.assertNotContains(other_home, '987.65')
+        self.assertNotContains(other_home, 'private title')
+
+    def test_home_shows_latest_record_per_product_and_only_current_owner(self):
+        self.save()
+        latest_data = payload(title='My newest quote', price='24.99')
+        latest = save_preview(self.token(latest_data), owner=self.owner, product_pk=self.product.pk)[0]
+        foreign = payload(title='Other account secret', price='888.88')
+        save_preview(self.token(foreign, owner=self.other), owner=self.other, product_pk=self.product.pk)
+        for number in range(4):
+            target = URL.replace('1234567890', f'123456789{number+1}')
+            product = Product.objects.create(url=target, platform='AliExpress', title=f'Product {number}')
+            data = payload(url=target, product_id=f'100500123456789{number+1}', title=f'Own product {number}')
+            save_preview(self.token(data, product), owner=self.owner, product_pk=product.pk)
+        response = self.client.get(reverse('dashboard'))
+        recent = list(response.context['browser_home']['recent'])
+        self.assertEqual(response.context['browser_home']['count'], 6)
+        self.assertEqual(len(recent), 3)
+        self.assertEqual(len({row.product_id for row in recent}), 3)
+        self.assertTrue(all(row.owner_id == self.owner.pk for row in recent))
+        self.assertNotContains(response, 'Other account secret')
+        self.assertNotContains(response, '888.88')
+        self.assertEqual(response.context['snapshot_count'], 0)
+        # Remove later products so the two observations of the original product are in the visible range.
+        Product.objects.exclude(pk=self.product.pk).delete()
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(list(response.context['browser_home']['recent']), [latest])
+        self.assertContains(response, 'My newest quote')
+        self.assertContains(response, '24.99')
+        self.assertNotContains(response, '987.65')
 
     def test_csv_cannot_forge_browser_source(self):
         content = f'title,url,price,currency,observed_at,source\nx,{URL},1,USD,{self.data["observed_at"]},browser\n'.encode()

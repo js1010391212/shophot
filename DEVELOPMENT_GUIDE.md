@@ -6,7 +6,7 @@
 
 | 模块 | 服务 / 数据 | 页面与交互 | 主要验证 |
 | --- | --- | --- | --- |
-| 浏览器观测契约（B1） | `browser_capture.py`，有界JSON接收/账号商品签名预览，复用链接规范化/QuoteTarget/金额校验，不保存 | 扩展、路由、预览和确认尚未接入 | `test_browser_capture.py`：编码/重复键/输入边界、商品规格/签名归属及过期；实站未验收 |
+| 浏览器观测契约（B1） | `browser_capture.py`，有界JSON接收/账号商品签名预览，复用链接规范化/QuoteTarget/金额校验，不保存 | 纯契约由浏览器主动观测模块复用；实站边界见扩展README | `test_browser_capture.py`：编码/重复键/输入边界、商品规格/签名归属及过期；实站未验收 |
 | 商品页面文件导入 | `page_import.py` / `structured_page.py` / `page_import_forms.py`；复用 Product / Snapshot；`otto.py` 保留链接规范化 | `page_import_views.py` / `page_import{,_start}.html`；首页、失败页、商品报告入口；旧 OTTO URL/表单兼容 | `test_page_import.py` / `test_otto.py`；身份/规格/未知值、签名归属与过期、CSRF、历史保护；真实文件兼容性待验收 |
 | 平台识别与验收 | `platforms.py`；`AnalyzeForm`；只读 `scripts/validate_platform_samples.py` | 首页与现有分析表单明确提示未接入平台 | `test_platforms.py`，真实域名/边界、兼容、不误排队；实站见 CROSS_PLATFORM_VALIDATION.md |
 | 分析流程 | `workflows.py`、`jobs.py`；StoreDiscovery / CollectionJob | `workflow_views.py`、`workflow.html`、`workflow.js` | `test_workflows.py`，输入到报告、空目录、失败、重试、重复任务 |
@@ -17,7 +17,7 @@
 | 定时价格监测 | `price_monitoring.py`；PriceMonitor / StorePriceJob，现有 worker 调度 | `price_monitoring_views.py`、`price_monitoring_forms.py`、监测清单/设置模板 | `test_price_monitoring.py`，到期、共享队列、目录重排、归属、暂停恢复、失败退避与历史保留 |
 | 评论分析与观测历史 | `review_analysis.py` / `product_reviews.py` / ProductReviewBatch；复用 Snapshot 与已有目录样本 | `product_review_forms.py` / `product_review_views.py` / `product_reviews.html`；导入预览与商品报告入口；复用 review_analysis 图表 | `test_product_reviews.py` / `test_review_analysis.py` / `test_reviews.py`；归属/去重/历史/证据/未知/否定/目录复用 |
 | 候选清单 | `candidates.py`；CatalogCandidate | 清单/编辑模板；现有候选视图下一次修改时可迁出 `views.py` | `test_candidates.py`，归属、重复、恢复、跨目录关联 |
-| 浏览器主动观测 | `browser_capture.py` / `browser_capture_targets.py` / `ebay.py` / `browser_capture_records.py` / 固定资源 `browser_capture_package.py`；Snapshot browser账号归属 | `browser_capture_views.py`、预览/私有报告模板、独立CSS；Chrome扩展 `extensions/shophot-capture/` | `test_browser_capture*` / `test_ebay.py`，账号/CSRF/签名/幂等/并发/公共数据隔离；Node专项及真实DOM证据，实站范围见扩展README |
+| 浏览器主动观测 | `browser_capture.py` / `browser_capture_targets.py` / `ebay.py` / `browser_capture_records.py` / 固定资源 `browser_capture_package.py`；Snapshot browser账号归属 | `browser_capture_views.py`、预览/私有报告模板、首页browser_recent私有卡片、独立CSS；Chrome扩展 `extensions/shophot-capture/` | `test_browser_capture*` / `test_ebay.py`，账号/CSRF/签名/幂等/并发/公共数据隔离；Node专项及真实DOM证据，实站范围见扩展README |
 | 物流核算与报价导入 | `shipping.py` / `shipping_forms.py` / `shipping_import.py`；ShippingRate，公开参考独立目录 | `shipping_views.py` / shipping 模板与 partial / `shipping.js` / `shipping.css`，利润内直接选择报价 | `test_shipping.py`，重量边界、燃油基数、币种、尾差、原子导入/日期/公式拒绝/账号隔离；来源与限制见 SHIPPING_MODULE.md |
 | 利润工具 | `profit.py` 的 ledger 与定价反算、LogisticsProfitForm（复用 ProfitForm） | `profit.html`、`profit.js`、物流 partial | `test_profit.py`，币种、折扣、逐项舍入对账与实际达标价；物流 POST 重新核算 |
 | 公共界面 | `ui.css`、`ui.js`、`base.html`、`partials/navigation.html`、`partials/research_filters.html` | 导航、布局、表单层级、手机菜单 | 浏览器桌面/移动及键盘验证 |
