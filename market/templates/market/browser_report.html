@@ -1,0 +1,13 @@
+{% extends 'market/base.html' %}{% load static %}
+{% block title %}我的浏览器观测 · ShopHot{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'market/browser_capture.css' %}?v=1"><div class="browser-capture">
+<a href="{% url 'product_detail' product.pk %}">← 公共商品报告</a>
+<div class="heading"><div><p class="eyebrow">仅当前账号 · {{ product.platform }}</p><h1>我的浏览器观测</h1><p>{{ product.title }}</p></div><a class="button secondary" href="{% url 'browser_capture' %}">接收新报价</a></div>
+<p class="notice">原始报价按币种与完整条件分别列出，不换算、不跨规格或条件计算涨跌。国家、规格或条件未知时，不能确认报价可比较。客户端声明不证明页面真实性。</p>
+{% for group in groups %}<section class="card"><h2>{{ group.currency }} · 规格 {{ group.sku_id|default_if_none:'未知' }} · 国家 {{ group.market_country|default_if_none:'未知' }}</h2><p>报价类型：当前报价</p><ul>{% for condition in group.conditions %}<li>{{ condition }}</li>{% empty %}<li>报价条件未知</li>{% endfor %}</ul>
+<div class="table-wrap"><table><thead><tr><th>原观测时间（含时区）</th><th>价格</th><th>来源 / 原商品</th><th>可见证据</th></tr></thead><tbody>{% for row in group.rows %}<tr><td>{{ row.capture_data.observed_at }}</td><td>{{ row.price }} {{ row.currency }}</td><td>{{ row.get_source_display }}<small>{{ row.capture_data.adapter_version }}</small><a href="{{ row.capture_data.url }}" target="_blank" rel="noopener noreferrer">原商品链接 ↗</a></td><td>{{ row.capture_data.title }}<small>{{ row.capture_data.evidence|linebreaksbr }}</small></td></tr>{% endfor %}</tbody></table></div></section>
+{% empty %}<section class="card"><h2>还没有你的浏览器观测</h2><p><a href="{{ product.url }}" target="_blank" rel="noopener noreferrer">打开原商品页 ↗</a>，选择规格后点击 ShopHot 扩展采集。核对预览并确认后，记录会出现在这里。其他账号的观测不会显示。</p></section>{% endfor %}
+{% if page.paginator.num_pages > 1 %}<div class="pagination">第 {{ page.number }} / {{ page.paginator.num_pages }} 页{% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">上一页</a>{% endif %}{% if page.has_next %}<a href="?page={{ page.next_page_number }}">下一页</a>{% endif %}</div>{% endif %}
+</div>
+{% endblock %}

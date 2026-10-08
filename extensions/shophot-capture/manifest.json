@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "ShopHot 当前商品采集",
+  "version": "0.1.0",
+  "description": "点击读取当前公开商品报价，经本地预览核对后确认保存。",
+  "minimum_chrome_version": "102",
+  "permissions": ["activeTab", "scripting", "storage", "alarms"],
+  "background": {"service_worker": "worker.mjs", "type": "module"},
+  "action": {"default_popup": "popup.html"},
+  "content_scripts": [{
+    "matches": ["http://127.0.0.1:8000/browser/capture/*", "http://127.0.0.1:8000/accounts/login/*"],
+    "js": ["bridge.js"],
+    "run_at": "document_idle",
+    "all_frames": false
+  }]
+}

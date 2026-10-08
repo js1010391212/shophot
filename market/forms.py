@@ -12,7 +12,7 @@ class CandidateForm(forms.ModelForm):
 
 
 class ProductForm(forms.ModelForm):
-    platform = forms.ChoiceField(label="平台", choices=[("AliExpress", "AliExpress · 速卖通"), ("Shopify", "Shopify · 独立站"), ("OTTO", "OTTO · 页面导入 / 手动"), ("Other", "其他平台（手动 / CSV）")])
+    platform = forms.ChoiceField(label="平台", choices=[("AliExpress", "AliExpress · 速卖通"), ("Shopify", "Shopify · 独立站"), ("OTTO", "OTTO · 浏览器 / 页面导入"), ("eBay", "eBay · 浏览器采集"), ("Other", "其他平台（手动 / CSV）")])
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -23,6 +23,12 @@ class ProductForm(forms.ModelForm):
 
     def clean(self):
         data = super().clean()
+        if data.get('platform') == 'eBay' and data.get('url'):
+            from .ebay import normalize_ebay_url
+            try:
+                data['url'] = normalize_ebay_url(data['url'])
+            except forms.ValidationError as exc:
+                self.add_error('url', exc)
         if data.get('platform') == 'OTTO' and data.get('url'):
             from .otto import normalize_otto_url
             try: data['url'] = normalize_otto_url(data['url'])
@@ -153,7 +159,7 @@ class CompareForm(forms.Form):
 
 
 class AnalyzeForm(forms.Form):
-    platform = forms.ChoiceField(label="研究平台", choices=[("AliExpress", "速卖通"), ("Shopify", "Shopify 独立站"), ("OTTO", "OTTO · 页面导入 / 手动")], required=False, initial="AliExpress")
+    platform = forms.ChoiceField(label="研究平台", choices=[("AliExpress", "速卖通"), ("Shopify", "Shopify 独立站"), ("OTTO", "OTTO · 浏览器 / 页面导入"), ("eBay", "eBay · 浏览器采集")], required=False, initial="AliExpress")
     url = forms.URLField(label="竞品商品链接", max_length=500, widget=forms.URLInput(
         attrs={"placeholder": "速卖通 /item/…html 或 Shopify /products/…"}))
 
@@ -171,6 +177,10 @@ class AnalyzeForm(forms.Form):
         platform = self.cleaned_data.get('platform')
         from .platforms import check_analysis_support
         from .platforms import known_platform
+        if self.allow_store and known_platform(self.cleaned_data['url']) == 'eBay':
+            from .ebay import normalize_ebay_url
+            self.cleaned_data['platform'] = 'eBay'
+            return normalize_ebay_url(self.cleaned_data['url'])
         if self.allow_store and known_platform(self.cleaned_data['url']) == 'OTTO':
             from .otto import normalize_otto_url
             self.cleaned_data['platform'] = 'OTTO'

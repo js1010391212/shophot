@@ -60,12 +60,20 @@ class Product(models.Model):
         return self.title
 
 
+class PublicSnapshotManager(models.Manager):
+    """历史公共入口默认排除账号私有的浏览器观测。"""
+
+    def get_queryset(self):
+        return super().get_queryset().exclude(source="browser")
+
+
 class Snapshot(models.Model):
     class Source(models.TextChoices):
         CSV = "csv", "CSV 导入"
         WEB = "web", "网页采集"
         DEMO = "demo", "演示数据"
         MANUAL = "manual", "手动记录公开页面"
+        BROWSER = "browser", "浏览器主动观测"
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="snapshots")
     price = models.DecimalField("价格", max_digits=12, decimal_places=2)
@@ -78,11 +86,21 @@ class Snapshot(models.Model):
     source = models.CharField(max_length=10, choices=Source.choices)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    capture_id = models.UUIDField(null=True, blank=True)
+    capture_data = models.JSONField(default=dict, blank=True)
+    objects = PublicSnapshotManager()
+    all_objects = models.Manager()
+
     class Meta:
+        default_manager_name = "objects"
+        base_manager_name = "all_objects"
         ordering = ["-observed_at", "-pk"]
         constraints = [models.CheckConstraint(condition=Q(price__gte=0), name="snapshot_nonnegative_price"),
                        models.CheckConstraint(condition=Q(rating__isnull=True) | Q(rating__gte=0, rating__lte=5), name="rating_zero_to_five"),
-                       models.UniqueConstraint(fields=["product", "observed_at", "source"], name="unique_observation")]
+                       models.UniqueConstraint(fields=["product", "observed_at", "source"], condition=~Q(source="browser"), name="unique_observation"),
+                       models.UniqueConstraint(fields=["owner", "capture_id"], condition=Q(source="browser"), name="unique_browser_capture"),
+                       models.CheckConstraint(condition=(Q(source="browser", owner__isnull=False, capture_id__isnull=False) | (~Q(source="browser") & Q(owner__isnull=True, capture_id__isnull=True))), name="snapshot_capture_ownership")]
         indexes = [models.Index(fields=["product", "observed_at"])]
 
 

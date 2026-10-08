@@ -222,6 +222,9 @@ def analyze_competitor(request):
     form = AnalyzeForm(request.POST, allow_store=True)
     if form.is_valid():
         url = form.cleaned_data["url"]
+        if form.cleaned_data['platform'] == 'eBay':
+            from .browser_capture_views import start_browser_research
+            return start_browser_research(request, url, 'eBay')
         if form.cleaned_data['platform'] == 'AliExpress' and '?sku_id=' in url:
             product,_=Product.objects.get_or_create(url=url,defaults={'title':'待识别竞品 · '+urlsplit(url).path.rsplit('/',1)[-1],'platform':'AliExpress'})
             if product.platform != 'AliExpress':

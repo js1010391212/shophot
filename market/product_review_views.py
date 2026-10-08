@@ -11,7 +11,7 @@ from .review_analysis import analyze_reviews
 @require_GET
 def product_reviews(request,pk):
     product=get_object_or_404(Product,pk=pk)
-    batches=list(ProductReviewBatch.objects.filter(snapshot__product=product).select_related('snapshot')[:100])
+    batches=list(ProductReviewBatch.objects.filter(snapshot__product=product).exclude(snapshot__source='browser').select_related('snapshot')[:100])
     catalog=catalog_samples(product)
     form=ReviewHistoryForm(request.GET,batches=batches,catalog_available=bool(catalog))
     valid=form.is_valid()
