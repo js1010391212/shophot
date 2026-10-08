@@ -5,11 +5,22 @@ from collections import OrderedDict
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import OuterRef, Subquery
 from django.utils.dateparse import parse_datetime
 
 from .browser_capture import load_preview
 from .models import Product, Snapshot
 from .browser_capture_targets import identify_capture_target as identify_target
+
+
+def home_summary(owner):
+    """首页只展示当前账号最近保存的每件商品，不混入公共报价统计。"""
+    owned = Snapshot.all_objects.filter(source=Snapshot.Source.BROWSER, owner=owner)
+    latest = owned.filter(product_id=OuterRef('product_id')).values('pk')[:1]
+    return {
+        'count': owned.count(),
+        'recent': owned.filter(pk=Subquery(latest)).select_related('product')[:3],
+    }
 
 
 def save_preview(token, *, owner, product_pk):

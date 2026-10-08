@@ -1,0 +1,17 @@
+{% load tz %}
+{% if browser_home.count %}
+<section class="home-recent browser-home">
+  <div class="heading compact"><div><h2>我的报价记录</h2><p class="muted">已保存 {{ browser_home.count }} 次报价，仅你可见。这里展示最近记录的商品。</p></div></div>
+  <div class="recent-grid">
+    {% for row in browser_home.recent %}
+    <article class="card recent-card">
+      <span class="badge">{{ row.product.platform }}</span>
+      <h3>{{ row.capture_data.title|default:row.product.title }}</h3>
+      <p class="capture-price">{{ row.price }} <span>{{ row.currency }}</span></p>
+      <p class="muted">{{ row.observed_at|timezone:'Asia/Shanghai'|date:'Y-m-d H:i' }} · 北京时间</p>
+      <a class="button secondary" href="{% url 'browser_report' row.product.pk %}">查看报价记录 →</a>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

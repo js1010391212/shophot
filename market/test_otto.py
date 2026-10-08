@@ -68,7 +68,7 @@ class OttoImportTests(TestCase):
 
     def test_home_flow_and_read_only_get(self):
         response=self.client.post(reverse('analyze_competitor'),{'platform':'Auto','url':URL+'?utm_source=test'})
-        self.assertRedirects(response,self.path)
+        self.assertRedirects(response,reverse('browser_report',args=[self.product.pk]))
         self.assertEqual(Product.objects.count(),1)
         self.client.get(self.path)
         self.assertFalse(CollectionJob.objects.exists());self.assertFalse(Snapshot.objects.exists())
