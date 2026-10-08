@@ -1,0 +1,55 @@
+[
+  {
+    "sample": "otto-yellow",
+    "observed_at": "2026-10-08T09:29:09.055Z",
+    "reading": {
+      "conditions": [
+        "规格：gelb",
+        "inkl. MwSt. zzgl. Versandkosten"
+      ],
+      "currency": "EUR",
+      "evidence": "GURU-SHOP Laterne Orientalische Metall/Glas Laterne in.. | 10,90 € | 规格：gelb | inkl. MwSt. zzgl. Versandkosten | variationId=S0R0I0F04SO6",
+      "priceText": "10,90 €",
+      "productId": "S0R0I0F0",
+      "referencePrice": "10.90",
+      "sku": "S0R0I0F04SO6",
+      "title": "GURU-SHOP Laterne Orientalische Metall/Glas Laterne in..",
+      "url": "https://www.otto.de/p/guru-shop-laterne-orientalische-metall-glas-laterne-in-S0R0I0F0/?variationId=S0R0I0F04SO6#"
+    }
+  },
+  {
+    "sample": "otto-green",
+    "observed_at": "2026-10-08T09:24:30.872Z",
+    "reading": {
+      "conditions": [
+        "规格：grün",
+        "inkl. MwSt. zzgl. Versandkosten"
+      ],
+      "currency": "EUR",
+      "evidence": "GURU-SHOP Laterne Orientalische Metall/Glas Laterne in.. | 10,90 € | 规格：grün | inkl. MwSt. zzgl. Versandkosten | variationId=S0R0I0F0C3SE",
+      "priceText": "10,90 €",
+      "productId": "S0R0I0F0",
+      "referencePrice": "10.90",
+      "sku": "S0R0I0F0C3SE",
+      "title": "GURU-SHOP Laterne Orientalische Metall/Glas Laterne in..",
+      "url": "https://www.otto.de/p/guru-shop-laterne-orientalische-metall-glas-laterne-in-S0R0I0F0/?variationId=S0R0I0F0C3SE#"
+    }
+  },
+  {
+    "sample": "otto-costway",
+    "observed_at": "2026-10-08T09:24:30.873Z",
+    "reading": {
+      "conditions": [
+        "inkl. MwSt. zzgl. Versandkosten"
+      ],
+      "currency": "EUR",
+      "evidence": "COSTWAY Hundeschermaschine Hundepflegetisch, Trimmtisch, Arbeitstisch, klappbar | 165,99 € | inkl. MwSt. zzgl. Versandkosten | variationId=S08F10JEM769",
+      "priceText": "165,99 €",
+      "productId": "S08F10JE",
+      "referencePrice": "165.99",
+      "sku": "S08F10JEM769",
+      "title": "COSTWAY Hundeschermaschine Hundepflegetisch, Trimmtisch, Arbeitstisch, klappbar",
+      "url": "https://www.otto.de/p/costway-hundeschermaschine-hundepflegetisch-trimmtisch-arbeitstisch-klappbar-S08F10JE/?variationId=S08F10JEM769"
+    }
+  }
+]

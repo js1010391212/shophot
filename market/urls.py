@@ -1,8 +1,12 @@
 from django.urls import path
 from . import views, workflow_views, price_history_views, price_monitoring_views, sample_market_views, otto_views, page_import_views, product_review_views
-from . import shipping_views
+from . import shipping_views, browser_capture_views
 
 urlpatterns = [
+    path('browser/capture/download/', browser_capture_views.download, name='browser_capture_download'),
+    path('browser/capture/', browser_capture_views.preview, name='browser_capture'),
+    path('products/<int:pk>/browser/confirm/', browser_capture_views.confirm, name='browser_capture_confirm'),
+    path('products/<int:pk>/browser/', browser_capture_views.report, name='browser_report'),
     path('tools/logistics/', shipping_views.logistics, name='shipping'),
     path('tools/logistics/rates/new/', shipping_views.rate_edit, name='shipping_rate_add'),
     path('tools/logistics/rates/<int:pk>/edit/', shipping_views.rate_edit, name='shipping_rate_edit'),

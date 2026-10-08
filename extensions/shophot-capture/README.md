@@ -1,0 +1,56 @@
+# ShopHot 当前商品采集扩展
+
+首版 Chrome Manifest V3 扩展，要求 **Chrome 102 或以上**。用户在正常商品页点击采集后，扩展读取当前顶层页面的有限公开 DOM，打开本地 ShopHot 报价预览；**用户核对并点击确认后才保存**。不读取或导出 cookie、账号存储、登录凭据，不请求私有接口，不自动打开外站，不绕过登录或访问验证。
+
+## 安装和使用
+
+1. 启动已集成浏览器接收模块的 ShopHot，并在 **http://127.0.0.1:8000** 正常登录。扩展固定使用此地址；`localhost`、其他端口或 HTTPS 本地地址暂不接收。
+2. 将扩展 ZIP 解压到固定目录，或者使用本目录。根目录必须直接包含 `manifest.json`。
+3. 在 Chrome 打开 `chrome://extensions/`，开启开发者模式，点击“加载已解压的扩展程序”，选择上述目录。可在工具栏固定“ShopHot 当前商品采集”。
+4. 打开正常商品页，选好规格，等待页面报价、规格标记和 URL 更新完成。点击扩展，再点击“采集到 ShopHot”。
+5. 扩展打开本地接收页并提交预览。核对来源链接、规格编号、当前价、币种、条件和时间；点击本地页面的“确认并保存报价”，随后查看当前账号的浏览器观测报告。
+
+出现验证页时，先在平台正常完成登录或验证，再进入商品页采集；扩展不处理验证。若本地登录过期，先登录 ShopHot，然后回商品页重新采集。页面或扩展更新后，需要刷新商品页再采集。取消预览不会保存观测。
+
+## 平台状态和限制
+
+| 平台 | 本轮证据 | 当前边界 |
+| --- | --- | --- |
+| OTTO | 真实读取两件商品：[Guru-Shop 灯笼](https://www.otto.de/p/guru-shop-laterne-orientalische-metall-glas-laterne-in-S0R0I0F0/) 10.90 EUR，黄色/绿色各有明确规格；[COSTWAY 护理桌](https://www.otto.de/p/costway-hundeschermaschine-hundepflegetisch-trimmtisch-arbeitstisch-klappbar-S08F10JE/) 165.99 EUR。源码 `EVIDENCE.md` 记录完整证据 | 当前价区、商品编号、动态购买区、所选规格与 URL 交叉校验。其他布局、未处理的规格控件、矛盾或含糊报价严格拒绝。 |
+| AliExpress | 历史链接进入验证，缺少正常登录后的商品页 | 仅候选语义 DOM 适配，**未实站验收**。必须单个 Product/Offer 明确归属，并有可见准确价格；带 SKU 或规格控件因映射未核验而拒绝。 |
+| eBay | 本轮 `/itm/297641468411` 进入浏览器验证页 | `/itm/编号` 与数字 `var` 识别保留，地区站不混同。仅候选语义 DOM 适配，**未实站验收**；带 var 或规格控件因映射未核验而拒绝。 |
+
+OTTO 切换规格后，外层容器及 JSON-LD 可能仍保留旧规格；本适配器读取动态当前价区、购买区与规格控件，不采用旧 JSON-LD 报价。推荐区、划线价、分期金额和含糊区间不得充当当前报价。收货国家保持 `null`，不从页面语言推断；空条件数组表示未知。一次浏览器观测不能用于推断销量或整体市场。
+
+**Chrome 安装后的完整联调仍待验收**。本轮实际适配器在内置浏览器正常 OTTO 页面执行成功，专项测试使用隔离的 DOM/Chrome API doubles；尚未在已安装 Chrome 扩展中完成“采集 → 预览 → 确认 → 报告”，不能声称该完整流程或所有平台已经通过实站验收。Chrome 扩展弹窗桌面/手机布局亦未实际安装验收；Chrome 手机版本不支持此桌面扩展，手机端主要验收本地预览/报告。
+
+## 接收契约和数据生命周期
+
+- 仅用户点击时注入 `activeTab` 顶层脚本；无外站永久 host 权限。
+- 本地内容脚本只匹配 `127.0.0.1:8000/browser/capture/*` 和同源登录页。数据通过扩展内部 runtime 消息交给此次创建的本地标签页；校验 sender 扩展 ID、顶层 frame、当前标签页、精确 origin/path。
+- 不提供 `window.postMessage` 或 `externally_connectable` 接口，不把 JSON 或令牌放入 URL。`storage.session` 设为 `TRUSTED_CONTEXTS`，10 分钟过期并用闹钟清理；最多三个待处理页面。标签页关闭、未知跳转、登录阻断或接收失败时清除其数据。数据交给表单后立即删除原始 session payload。
+- 初始表单必须为 `#browser-capture-form[data-browser-capture-bridge="ready"]`，普通同源 POST，含唯一的 `target_url`、`capture` 与有效 CSRF。内容脚本保留 CSRF，只执行一次 `requestSubmit()`。预览页无 ready 标记，绝不再次发送。
+- JSON 严格保持 B1 的 15 个字段。价格是十进制字符串、报价类型仅 `current`；跟踪参数清理，商品规格参数保留。后端仍需独立校验登录、CSRF、来源身份、时间与签名。
+- “等待接收”“已发送”“预览已显示”均不等于保存成功。保存成功由本地确认后的报告页面显示。
+
+权限 `activeTab`/`scripting` 用于用户点击采集；`storage` 用于内存 session；`alarms` 清理过期记录。Chrome 102 下限来自 [`storage.session` 与 `setAccessLevel`](https://developer.chrome.com/docs/extensions/reference/api/storage)。[activeTab 官方说明](https://developer.chrome.com/docs/extensions/develop/concepts/activeTab)。扩展无网络采集服务，也不需要 worker 参与点击采集。
+
+ZIP只包含运行资源及本说明；开发测试和原始证据在[源仓库](https://github.com/js1010391212/shophot/tree/main/extensions/shophot-capture)，不混入安装包。
+
+## 专项验证（源仓库开发者）
+
+在仓库根目录执行：
+
+```sh
+node --test extensions/shophot-capture/tests/*.test.mjs
+```
+
+测试覆盖来源 URL/规格冲突、区间/推荐/分期/划线价、可见币种、验证页、错商品、顶层 sender、标签页隔离、同源 POST/CSRF、重复/刷新、10 分钟 TTL、离线/登录状态及 session 恢复。DOM doubles 与真实 DOM 证据分别记录。
+
+可用仓库 Python 环境验证冻结的真实 OTTO 读数与现有 B1 契约：
+
+```sh
+.venv/bin/python extensions/shophot-capture/tests/backend_contract.py
+```
+
+这项检查只配置最小 Django settings，不连接数据库、不创建或保存观测、不启动服务。使用原始观测时间作为校验时钟，历史证据不重标为新采集。eBay 后端由负责人独立集成，本测试仅验证本轮实际 OTTO 输出。

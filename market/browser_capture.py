@@ -10,8 +10,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from .otto import normalize_otto_url
-from .page_import import identify_target, normalize_aliexpress_url
+from .browser_capture_targets import identify_capture_target, target_configuration
 from .quote_identity import QuoteTarget
 from .validation import clean_currency, clean_price
 
@@ -56,7 +55,7 @@ def parse_capture(raw, target_url, *, now=None):
 def _preview_context(target_url, owner_id, product_pk):
     if any(type(value) is not int or value <= 0 for value in (owner_id, product_pk)):
         raise ValidationError('预览须绑定已登录账号及已存在商品。')
-    _, target = identify_target(target_url)
+    _, target = identify_capture_target(target_url)
     return {'owner': owner_id, 'product': product_pk, 'url': target}
 
 
@@ -105,20 +104,17 @@ def validate_capture(payload, target_url, *, now=None):
     if not re.fullmatch(r'[a-z][a-z0-9_-]{0,30}/[1-9][0-9]{0,5}', adapter):
         raise ValidationError('适配器版本须为名称/版本编号。')
 
-    platform, target = identify_target(target_url)
+    platform, target, normalizer, variant_key = target_configuration(target_url)
     if payload['platform'] != platform:
         raise ValidationError('观测平台与目标商品不一致。')
     captured_url = _text(payload['url'], '来源商品链接', 500)
-    normalizer, variant_key = (
-        (normalize_otto_url, 'variationId') if platform == 'OTTO'
-        else (normalize_aliexpress_url, 'sku_id')
-    )
     identity = QuoteTarget(target, normalizer, variant_key)
     if not identity.matches(captured_url, strict=True):
         raise ValidationError('观测链接的商品或规格与目标不一致。')
     path = urlsplit(target).path
     product_id = (
         path.rsplit('-', 1)[-1].rstrip('/') if platform == 'OTTO'
+        else path.rsplit('/', 1)[-1] if platform == 'eBay'
         else path.rsplit('/', 1)[-1].removesuffix('.html')
     )
     if payload['product_id'] != product_id:

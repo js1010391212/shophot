@@ -58,6 +58,8 @@ def import_csv(content):
                     raise ValidationError("观测时间超出可保存范围，请检查日期和时区。") from exc
                 sales = clean_count(row.get("sales", ""), "销量")
                 source = row.get("source") or Snapshot.Source.CSV
+                if source == Snapshot.Source.BROWSER:
+                    raise ValidationError("browser 为账号私有观测来源，请使用浏览器预览确认入口。")
                 if source not in Snapshot.Source.values:
                     raise ValidationError("source 须为 csv、web、demo 或 manual。")
                 context = row.get("context", "")
