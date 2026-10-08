@@ -1,9 +1,11 @@
 """浏览器主动观测的输入契约；仅校验，不请求网络、不保存观测。"""
+import json
 import re
 from datetime import timedelta
 from urllib.parse import urlsplit
 from uuid import UUID
 
+from django.core import signing
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -19,10 +21,70 @@ FIELDS = frozenset({
     'product_id', 'sku_id', 'title', 'price', 'currency', 'quote_type',
     'market_country', 'conditions', 'observed_at', 'evidence',
 })
+MAX_CAPTURE_BYTES = 16 * 1024
+PREVIEW_SALT = 'browser-capture-preview-v1'
+PREVIEW_MAX_AGE = 20 * 60
+
+
+def _unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValidationError('浏览器观测JSON包含重复字段，无法确认内容。')
+        result[key] = value
+    return result
+
+
+def _reject_constant(value):
+    raise ValidationError('浏览器观测JSON不接受NaN或Infinity。')
+
+
+def parse_capture(raw, target_url, *, now=None):
+    """接收有界UTF-8 JSON字节；目标仍由服务器提供，不创建记录。"""
+    if not isinstance(raw, bytes) or not raw or len(raw) > MAX_CAPTURE_BYTES:
+        raise ValidationError('浏览器观测须为JSON字节正文，最大16KiB。')
+    try:
+        payload = json.loads(
+            raw.decode('utf-8'), object_pairs_hook=_unique_object,
+            parse_constant=_reject_constant,
+        )
+    except (UnicodeDecodeError, ValueError, RecursionError):
+        raise ValidationError('浏览器观测JSON编码、格式或嵌套层级无效。')
+    return validate_capture(payload, target_url, now=now)
+
+
+def _preview_context(target_url, owner_id, product_pk):
+    if any(type(value) is not int or value <= 0 for value in (owner_id, product_pk)):
+        raise ValidationError('预览须绑定已登录账号及已存在商品。')
+    _, target = identify_target(target_url)
+    return {'owner': owner_id, 'product': product_pk, 'url': target}
+
+
+def sign_preview(raw, target_url, *, owner_id, product_pk, now=None):
+    """控制器提供账号与商品；签名不代替登录、CSRF或确认事务。"""
+    context = _preview_context(target_url, owner_id, product_pk)
+    capture = parse_capture(raw, context['url'], now=now)
+    return signing.dumps({**context, 'capture': capture}, salt=PREVIEW_SALT, compress=True)
+
+
+def load_preview(token, target_url, *, owner_id, product_pk):
+    """仅读取本模块生成的20分钟预览；商品当前URL变更会使确认无效。"""
+    context = _preview_context(target_url, owner_id, product_pk)
+    token = _text(token, '签名预览', 32000)
+    try:
+        data = signing.loads(token, salt=PREVIEW_SALT, max_age=PREVIEW_MAX_AGE)
+    except (signing.BadSignature, ValueError, TypeError):
+        raise ValidationError('浏览器观测预览无效或已过期，请重新采集。')
+    if (not isinstance(data, dict) or set(data) != {'owner', 'product', 'url', 'capture'}
+            or any(data[key] != value for key, value in context.items())
+            or not isinstance(data['capture'], dict) or set(data['capture']) != FIELDS):
+        raise ValidationError('预览的账号、商品或规格已变更，请重新采集。')
+    return data['capture']
 
 
 def _text(value, label, limit):
-    if not isinstance(value, str) or not value.strip() or len(value) > limit:
+    if (not isinstance(value, str) or not value.strip() or len(value) > limit
+            or re.search(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\ud800-\udfff]', value)):
         raise ValidationError(f'{label}须为非空文本，最多{limit}个字符。')
     return value.strip()
 
