@@ -23,9 +23,20 @@ export function targetIdentity(value) {
       /^\/p\/[a-zA-Z0-9%_-]+-(?:S|C)[a-zA-Z0-9]+\/?$/.test(u.pathname)) {
     platform = 'OTTO'; productId = u.pathname.replace(/\/$/, '').split('-').at(-1); key = 'variationId'; domain = 'www.otto.de';
     u.pathname = u.pathname.replace(/\/$/, '') + '/';
-  } else if (EBAY_DOMAINS.some(h => u.hostname === h || u.hostname === 'www.' + h) &&
-      /^\/itm\/(?:[^/]+\/)?\d{9,15}\/?$/.test(u.pathname)) {
-    platform = 'eBay'; productId = u.pathname.replace(/\/$/, '').split('/').at(-1); key = 'var';
+  } else if (EBAY_DOMAINS.some(h => u.hostname === h || u.hostname === 'www.' + h)) {
+    const item = u.pathname.match(/^\/itm\/(?:[^/]+\/)?([0-9]{1,80})\/?$/);
+    const catalog = /^\/p\/[0-9]{1,80}\/?$/.test(u.pathname);
+    const listing = u.searchParams.getAll('iid');
+    if (!item && !catalog) throw new CaptureError('unsupported');
+    // /p/<ePID> is a catalog product, never a seller listing ID. An iid is only
+    // a URL-declared candidate; dom-reader independently binds it to the visible
+    // main listing detail link before accepting a catalog-page quote.
+    if (catalog && (listing.length !== 1 || !/^[0-9]{9,15}$/.test(listing[0])))
+      throw new CaptureError('catalog');
+    productId = item ? item[1] : listing[0];
+    if (item && (listing.length > 1 || (listing.length && listing[0] !== productId)))
+      throw new CaptureError('identity');
+    platform = 'eBay'; key = 'var';
     domain = 'www.' + u.hostname.replace(/^www\./, ''); u.pathname = '/itm/' + productId;
   } else throw new CaptureError('unsupported');
   const values = u.searchParams.getAll(key);
@@ -66,7 +77,7 @@ export function buildCapture(reading, now = new Date(), uuid = crypto.randomUUID
   if (!Array.isArray(reading.conditions) || reading.conditions.length > 5) throw new CaptureError('evidence');
   return {
     schema_version: 1, capture_id: uuid,
-    adapter_version: ({OTTO:'otto-dom/1', AliExpress:'aliexpress-dom/1', eBay:'ebay-dom/1'})[target.platform],
+    adapter_version: ({OTTO:'otto-dom/1', AliExpress:'aliexpress-dom/1', eBay:'ebay-dom/2'})[target.platform],
     platform: target.platform, url: target.url, product_id: target.productId, sku_id: target.sku,
     title: cleanText(reading.title, 240), price, currency: reading.currency, quote_type: 'current',
     market_country: null, conditions: reading.conditions.map(v=>cleanText(v,160)),

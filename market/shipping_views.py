@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core import signing
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,7 +13,8 @@ from django.views.decorators.http import require_http_methods, require_POST
 from .models import ShippingRate
 from .shipping import public_quotes, rate_fingerprint, rate_payload
 from .shipping_forms import ShippingEstimateForm, ShippingRateForm, ShippingImportForm
-from .shipping_import import parse_rates, csv_template, MAX_ROWS
+from .shipping_import import read_rate_table, validate_rate_rows, COLUMNS, HEADERS, csv_template, MAX_ROWS
+from .shipping_mapping import ColumnMappingForm, sign_table, load_table, validate_post_fields
 
 SALT = 'shipping-import-v1'
 
@@ -72,9 +74,40 @@ def rate_toggle(request, pk):
 @login_required
 @require_http_methods(['GET', 'POST'])
 def import_rates(request):
-    confirm = request.method == 'POST' and request.POST.get('action') == 'confirm'
+    action = request.POST.get('action', '') if request.method == 'POST' else ''
+    confirm = action == 'confirm'
     form = ShippingImportForm(request.POST if request.method == 'POST' and not confirm else None, request.FILES or None)
     context = {'form': form}
+    if request.method == 'POST':
+        try:
+            allowed = {'csrfmiddlewaretoken', 'action'}
+            if action == 'confirm':
+                allowed.add('preview')
+            elif action == 'map':
+                allowed.add('mapping_token')
+                allowed.update(prefix + key for key, _ in COLUMNS for prefix in ('column_', 'common_'))
+            elif action:
+                raise ValidationError('未知导入操作，请重新上传表格。')
+            validate_post_fields(request.POST, allowed)
+            if any(key != 'file' or len(request.FILES.getlist(key)) != 1 for key in request.FILES) or (action and request.FILES):
+                raise ValidationError('文件参数重复或不符合当前操作。')
+        except ValidationError as exc:
+            context['confirmation_error'] = '；'.join(exc.messages)
+            return render(request, 'market/shipping_import.html', context, status=400)
+    if action == 'map':
+        try:
+            token = request.POST.get('mapping_token', '')
+            table = load_table(token, request.user.pk)
+            mapping_form = ColumnMappingForm(request.POST, table=table)
+            context.update(mapping_form=mapping_form, mapping_token=token, table=table, samples=table['rows'][1:4])
+            if mapping_form.is_valid():
+                rows = mapping_form.rows
+                context = {'form': ShippingImportForm(), 'rows': rows,
+                           'preview': signing.dumps({'owner': request.user.pk, 'rows': rows}, salt=SALT, compress=True)}
+            return render(request, 'market/shipping_import.html', context, status=400 if mapping_form.errors else 200)
+        except ValidationError as exc:
+            context['confirmation_error'] = '；'.join(exc.messages)
+            return render(request, 'market/shipping_import.html', context, status=400)
     if confirm:
         try:
             token = request.POST.get('preview', '')
@@ -82,6 +115,8 @@ def import_rates(request):
                 raise ValueError
             data = signing.loads(token, salt=SALT, max_age=1200)
             if data['owner'] != request.user.pk or not isinstance(data['rows'], list) or not 1 <= len(data['rows']) <= MAX_ROWS:
+                raise ValueError
+            if any(not isinstance(row, dict) or set(row) != set(ShippingRateForm.Meta.fields) for row in data['rows']):
                 raise ValueError
             forms = [ShippingRateForm(row) for row in data['rows']]
             if not all(f.is_valid() for f in forms):
@@ -98,11 +133,17 @@ def import_rates(request):
         messages.success(request, f'已导入 {created} 条报价，跳过 {len(forms) - created} 条重复报价；现有报价未覆盖。')
         return redirect('shipping')
     if request.method == 'POST' and form.is_valid():
-        from django.core.exceptions import ValidationError
         try:
             upload = form.cleaned_data['file']
-            rows = parse_rates(upload.read(), upload.name)
-            context.update(rows=rows, preview=signing.dumps({'owner': request.user.pk, 'rows': rows}, salt=SALT, compress=True))
+            table = read_rate_table(upload.read(), upload.name)
+            if table['headers'] == HEADERS:
+                rows = validate_rate_rows(table, {key: i for i, (key, _) in enumerate(COLUMNS)}, {})
+                context.update(rows=rows, preview=signing.dumps({'owner': request.user.pk, 'rows': rows}, salt=SALT, compress=True))
+            else:
+                if len(table['rows']) < 2:
+                    raise ValidationError('表格没有报价数据。')
+                context.update(mapping_form=ColumnMappingForm(table=table), mapping_token=sign_table(table, request.user.pk),
+                               table=table, samples=table['rows'][1:4])
         except ValidationError as exc:
             form.add_error('file', exc)
     return render(request, 'market/shipping_import.html', context, status=400 if form.errors else 200)

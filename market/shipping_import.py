@@ -41,7 +41,8 @@ def _xlsx_rows(raw):
         workbook = _xml(archive, 'xl/workbook.xml')
         props = workbook.find('m:workbookPr', NS)
         epoch = datetime(1904, 1, 1) if props is not None and props.get('date1904') in ('1', 'true') else datetime(1899, 12, 30)
-        sheet = next((s for s in workbook.findall('m:sheets/m:sheet', NS) if s.get('name') == '物流报价'), None)
+        sheets = workbook.findall('m:sheets/m:sheet', NS)
+        sheet = next((s for s in sheets if s.get('name') == '物流报价'), sheets[0] if len(sheets) == 1 else None)
         if sheet is None:
             raise ValidationError('工作簿须有“物流报价”工作表，请使用下载模板。')
         relationships = _xml(archive, 'xl/_rels/workbook.xml.rels')
@@ -52,6 +53,8 @@ def _xlsx_rows(raw):
         path = target.lstrip('/') if target.startswith('/') else posixpath.normpath('xl/' + target)
         if not path.startswith('xl/worksheets/') or '..' in path:
             raise ValidationError('报价工作表路径无效。')
+        if any(r.get('TargetMode') == 'External' for r in relationships) or any('externalLinks/' in i.filename for i in infos):
+            raise ValidationError('表格不能包含外部链接。')
         strings = []
         if 'xl/sharedStrings.xml' in archive.namelist():
             for item in _xml(archive, 'xl/sharedStrings.xml').findall('m:si', NS):
@@ -66,7 +69,8 @@ def _xlsx_rows(raw):
             if number < 1 or number in used:
                 raise ValidationError('表格行号异常。')
             used.add(number)
-            values = [''] * len(COLUMNS)
+            values = [''] * 40
+            kinds = [''] * 40
             cells = set()
             for cell in row.findall('m:c', NS):
                 address = cell.get('r', '')
@@ -94,31 +98,25 @@ def _xlsx_rows(raw):
                     value = ''.join(t.text or '' for t in cell.iter(f'{{{NS["m"]}}}t'))
                 elif kind in ('e', 'b'):
                     raise ValidationError(f'第 {number} 行含错误或布尔值，请填写报价数值或文字。')
-                if col > len(COLUMNS):
-                    if value:
-                        raise ValidationError('报价表包含模板以外的数据列，请按模板整理。')
-                    continue
-                if kind == 'n' and value and COLUMNS[col - 1][0] in ('effective_from', 'effective_until'):
-                    serial = Decimal(value)
-                    if serial != serial.to_integral_value() or not 1 <= serial <= 2958465:
-                        raise ValidationError(f'第 {number} 行日期无效，请填写 yyyy-mm-dd。')
-                    value = (epoch + timedelta(days=int(serial))).date().isoformat()
-                if kind == 'd' and value:
-                    value = value.split('T', 1)[0]
+                if col > 40:
+                    raise ValidationError('自有报价表最多40列。')
                 values[col - 1] = value
+                kinds[col - 1] = kind
             if any(str(v).strip() for v in values):
-                rows.append((number, values))
+                rows.append((number, values, kinds))
             if len(rows) > MAX_ROWS + 1:
                 raise ValidationError(f'一次最多导入 {MAX_ROWS} 行报价。')
-        return sorted(rows)
+        width = max((max((i + 1 for i, v in enumerate(values) if str(v).strip()), default=0) for _, values, _ in rows), default=0)
+        return {'rows': [(n, v[:width], k[:width]) for n, v, k in sorted(rows)], 'epoch': epoch.date().isoformat(), 'sheet_count': len(sheets)}
 
 
-def parse_rates(raw, filename):
+def read_rate_table(raw, filename):
+    """保留原行号与单元格类型，日期仅在映射到日期字段后转换。"""
     if len(raw) > 2 * 1024 * 1024:
         raise ValidationError('文件不能超过 2 MB。')
     try:
         if filename.lower().endswith('.xlsx'):
-            rows = _xlsx_rows(raw)
+            table = _xlsx_rows(raw)
         elif filename.lower().endswith('.csv'):
             try:
                 text = raw.decode('utf-8-sig')
@@ -126,25 +124,64 @@ def parse_rates(raw, filename):
                 text = raw.decode('gb18030')
             reader = csv.reader(StringIO(text), strict=True)
             rows = []
-            for i, row in enumerate(reader, 1):
+            while True:
+                number = reader.line_num + 1
+                try:
+                    row = next(reader)
+                except StopIteration:
+                    break
+                if len(row) > 40:
+                    raise ValidationError('自有报价表最多40列。')
                 if any(v.strip() for v in row):
-                    rows.append((i, row))
+                    rows.append((number, row, [''] * len(row)))
                 if len(rows) > MAX_ROWS + 1:
                     raise ValidationError(f'一次最多导入 {MAX_ROWS} 行报价。')
+            table = {'rows': rows, 'epoch': None, 'sheet_count': 1}
         else:
             raise ValidationError('只支持 .xlsx / .csv 文件。')
     except (zipfile.BadZipFile, ET.ParseError, KeyError, ValueError, OverflowError, InvalidOperation, UnicodeError, csv.Error, RuntimeError):
-        raise ValidationError('无法读取表格，请使用未加密的 Excel 模板或 UTF-8 CSV。')
-    if not rows or [str(v).strip() for v in rows[0][1]] != HEADERS:
-        raise ValidationError('表头须与下载模板一致，并位于第一条数据行。')
-    if len(rows) > MAX_ROWS + 1:
-        raise ValidationError(f'一次最多导入 {MAX_ROWS} 行报价。')
+        raise ValidationError('无法读取表格，请使用未加密的 Excel 或 CSV。')
+    rows = table['rows']
+    if not rows:
+        raise ValidationError('表格没有表头或报价数据。')
+    headers = [str(v).strip() for v in rows[0][1]]
+    if not headers or any(not h for h in headers) or len(set(headers)) != len(headers):
+        raise ValidationError('表头不能重复或留空。')
+    if headers != HEADERS and table['sheet_count'] != 1:
+        raise ValidationError('自有表格只支持一个工作表；标准模板的说明表仍可保留。')
+    if any(len(str(value)) > 2000 for _, values, _ in rows for value in values):
+        raise ValidationError('单元格文字过长，最多2000字符。')
+    table['headers'] = headers
+    return table
+
+
+def _mapped_value(value, kind, key, epoch, number):
+    if key in ('effective_from', 'effective_until') and value:
+        try:
+            if kind == 'n':
+                serial = Decimal(value)
+                if serial != serial.to_integral_value() or not 1 <= serial <= 2958465:
+                    raise ValueError
+                value = (datetime.fromisoformat(epoch) + timedelta(days=int(serial))).date().isoformat()
+            elif kind == 'd':
+                value = value.split('T', 1)[0]
+        except (ValueError, OverflowError, InvalidOperation, TypeError):
+            raise ValidationError(f'第 {number} 行日期无效，请填写 yyyy-mm-dd。')
+    return str(value).strip()
+
+
+def validate_rate_rows(table, mapping, common):
     parsed, errors = [], []
-    for number, values in rows[1:]:
-        if len(values) != len(COLUMNS):
-            errors.append(f'第 {number} 行：列数不符合模板。')
+    for number, values, kinds in table['rows'][1:]:
+        if len(values) != len(table['headers']):
+            errors.append(f'第 {number} 行：列数与表头不一致。')
             continue
-        data = {key: str(value).strip() for (key, _), value in zip(COLUMNS, values)}
+        try:
+            data = {key: _mapped_value(values[index], kinds[index], key, table['epoch'], number)
+                    if index is not None else common.get(key, '') for key, index in mapping.items()}
+        except ValidationError as exc:
+            errors.extend(exc.messages)
+            continue
         form = ShippingRateForm(data)
         if form.is_valid():
             parsed.append(rate_payload(form.cleaned_data))
@@ -153,8 +190,15 @@ def parse_rates(raw, filename):
     if errors:
         raise ValidationError(errors[:10] + ([f'另有 {len(errors) - 10} 行错误。'] if len(errors) > 10 else []))
     if not parsed:
-        raise ValidationError('没有报价数据，请在“物流报价”表第二行起填写真实报价；说明表不参与导入。')
+        raise ValidationError('没有报价数据，请填写真实报价；说明表不参与导入。')
     return parsed
+
+
+def parse_rates(raw, filename):
+    table = read_rate_table(raw, filename)
+    if table['headers'] != HEADERS:
+        raise ValidationError('表头须与下载模板一致；自有表格可在上传入口选择列映射。')
+    return validate_rate_rows(table, {key: i for i, (key, _) in enumerate(COLUMNS)}, {})
 
 
 def csv_template():

@@ -17,6 +17,101 @@ export function readPublicPage() {
   if (/\/login|\/signin|\/sign-in|\/accounts\//.test(location.pathname)) return fail('login_external');
   const url = new URL(location.href);
   if (url.protocol !== 'https:' || url.username || url.password) return fail('unsupported');
+  const ebayHosts = ['ebay.com','ebay.co.uk','ebay.de','ebay.fr','ebay.it','ebay.es','ebay.ca','ebay.com.au','ebay.ie','ebay.nl'];
+  const ebay = ebayHosts.includes(url.hostname.replace(/^www\./,''));
+  if (ebay) {
+    const catalog=/^\/p\/[0-9]{1,80}\/?$/.test(url.pathname);
+    const item=url.pathname.match(/^\/itm\/(?:[^/]+\/)?([0-9]{1,80})\/?$/);
+    if (!catalog && !item) return fail('unsupported');
+    if (url.searchParams.has('var')) return fail('variant');
+    const declared=url.searchParams.getAll('iid');
+    if (catalog && (declared.length!==1 || !/^[0-9]{9,15}$/.test(declared[0]))) return fail('catalog');
+    const id=catalog ? declared[0] : item[1];
+    if (!catalog && (declared.length>1 || (declared.length && declared[0]!==id))) return fail('identity');
+    // Read only DOM regions observed on the normal catalog/listing sample. No
+    // recommendation fallback; a catalog ePID cannot identify a seller listing.
+    const scope=one(document,catalog ? '.x-prp-main-container_col-right' : '#mainContent.x-evo-atf-right-river');
+    if (!scope) return fail('identity');
+    const headingNode=one(scope,'.x-item-title h1');
+    // The observed listing h1 appends a separate display-only "-" span. Match
+    // only its unique bold title span; catalog h1 uses the observed plain title.
+    const title=catalog ? headingNode : headingNode && one(headingNode,'.ux-textspans--BOLD');
+    if (!title) return fail('identity');
+    if ([...scope.querySelectorAll('select,[role="listbox"],input[type="radio"],[role="radio"],[aria-haspopup="listbox"]')].some(visible)) return fail('variant');
+    const matchesListing=value=>{
+      if (typeof value!=='string') return false;
+      try {
+        const u=new URL(value,url.href), match=u.pathname.match(/^\/itm\/(?:[^/]+\/)?([0-9]{1,80})\/?$/);
+        const iid=u.searchParams.getAll('iid');
+        return u.protocol==='https:' && !u.username && !u.password && !u.port &&
+          u.hostname.replace(/^www\./,'')===url.hostname.replace(/^www\./,'') &&
+          match?.[1]===id && !u.searchParams.has('var') && iid.length<=1 && (!iid.length || iid[0]===id);
+      } catch {return false;}
+    };
+    // Observed public Buy It Now control proves an active fixed-price listing.
+    // Inspect only its DOM href; never navigate to or request the payment URL.
+    const buy=one(scope,'a#binBtn_btn_1');
+    if (!buy || buy.getAttribute('aria-disabled')==='true' || buy.getAttribute('disabled')!==null)
+      return fail('unavailable');
+    try {
+      const link=new URL(buy.getAttribute('href'),url.href);
+      const items=link.searchParams.getAll('item'),actions=link.searchParams.getAll('action');
+      if (link.protocol!=='https:' || link.hostname!=='pay.ebay.com' || link.port || link.username || link.password ||
+          link.pathname!=='/rxo' || items.length!==1 || items[0]!==id || actions.length!==1 || actions[0]!=='create')
+        return fail('unavailable');
+    } catch {return fail('unavailable');}
+    let referencePrice=null;
+    if (catalog) {
+      const detail=one(scope,'.x-see-details-action a[href]');
+      if (!detail || !matchesListing(detail.getAttribute('href'))) return fail('identity');
+    } else {
+      const canonical=[...document.querySelectorAll('link[rel="canonical"]')];
+      const og=[...document.querySelectorAll('meta[property="og:url"]')];
+      if (canonical.length!==1 || og.length!==1 || !matchesListing(canonical[0].getAttribute('href')) ||
+          !matchesListing(og[0].getAttribute('content'))) return fail('identity');
+      const pages=[],products=[];
+      const walk=(v,depth=0)=>{
+        if (!v || depth>12) return;
+        if (Array.isArray(v)) {v.slice(0,100).forEach(x=>walk(x,depth+1));return;}
+        if (typeof v!=='object') return;
+        const types=Array.isArray(v['@type']) ? v['@type'] : [v['@type']];
+        if (types.includes('ItemPage')) pages.push(v);
+        if (types.includes('Product')) products.push(v);
+        if (v['@graph']) walk(v['@graph'],depth+1);
+      };
+      for (const script of [...document.querySelectorAll('script[type="application/ld+json"]')].slice(0,15)) {
+        if (script.textContent.length>200000) continue;
+        try {walk(JSON.parse(script.textContent));} catch {/* malformed public metadata */}
+      }
+      if (pages.length!==1 || !matchesListing(pages[0].url)) return fail('identity');
+      const owners=products.filter(p=>p.offers && !Array.isArray(p.offers) && p.offers['@type']==='Offer' && matchesListing(p.offers.url));
+      if (owners.length!==1) return fail('identity');
+      const product=owners[0],offer=product.offers;
+      if (product.name!==undefined && (typeof product.name!=='string' ||
+          product.name.trim().replace(/\s+/g,' ')!==text(title))) return fail('identity');
+      if (typeof offer.availability!=='string' || !/\/InStock$/.test(offer.availability)) return fail('unavailable');
+      // The real listing metadata quotes an approximate JPY conversion. It is
+      // identity evidence only, never the reference amount for visible USD.
+      if (offer.priceCurrency==='USD') {
+        if (typeof offer.price!=='string' || !/^[0-9]{1,10}(?:\.[0-9]{1,2})?$/.test(offer.price)) return fail('price');
+        const [whole,fraction='']=offer.price.split('.');
+        referencePrice=whole.replace(/^0+(?=\d)/,'')+'.'+fraction.padEnd(2,'0');
+      }
+    }
+    const primary=one(scope,'.x-price-primary');
+    const quote=primary && one(primary,catalog ? ':scope > .ux-textspans' : '.x-price-primary__price > .ux-textspans');
+    if (!quote || quote.closest('del,s') || getComputedStyle(quote).textDecorationLine.includes('line-through')) return fail('price');
+    const priceText=text(quote);
+    // USD is the only eBay currency DOM verified for this bounded adapter.
+    if (!/^(?:US\s*\$|USD)\s*[0-9]/.test(priceText)) return fail('currency');
+    const conditions=[];
+    const bestOffer=primary && one(primary,'.x-price-primary__orBestOffer');
+    if (bestOffer && text(bestOffer)) conditions.push(text(bestOffer));
+    const target=new URL('/itm/'+id,url.origin);
+    target.hostname='www.'+url.hostname.replace(/^www\./,'');
+    return {url:target.href,productId:id,sku:null,title:text(title),priceText,currency:'USD',referencePrice,
+      conditions,evidence:[text(title),priceText,'listing='+id,...conditions].join(' | ')};
+  }
   const h1 = one(document, 'h1');
   if (!h1) return fail('identity');
   if (['otto.de','www.otto.de'].includes(url.hostname)) {
@@ -76,9 +171,7 @@ export function readPublicPage() {
     try { walk(JSON.parse(script.textContent)); } catch { /* malformed public structured data */ }
   }
   const ali = url.hostname === 'aliexpress.com' || url.hostname.endsWith('.aliexpress.com');
-  const ebayHosts = ['ebay.com','ebay.co.uk','ebay.de','ebay.fr','ebay.it','ebay.es','ebay.ca','ebay.com.au','ebay.ie','ebay.nl'];
-  const ebay = ebayHosts.includes(url.hostname.replace(/^www\./,''));
-  const match = ali ? url.pathname.match(/^\/item\/(\d+)\.html$/) : ebay ? url.pathname.match(/^\/itm\/(?:[^/]+\/)?(\d{9,15})\/?$/) : null;
+  const match = ali ? url.pathname.match(/^\/item\/(\d+)\.html$/) : ebay ? url.pathname.match(/^\/itm\/(?:[^/]+\/)?([0-9]{1,80})\/?$/) : null;
   if (!match) return fail('unsupported');
   const key = ali ? 'sku_id' : 'var';
   const sku = url.searchParams.get(key) || null;

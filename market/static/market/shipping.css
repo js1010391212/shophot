@@ -16,3 +16,16 @@
 .shipping-inline-link { display:inline-block; margin:10px 0; }
 [data-shipping-panel][hidden], [data-shipping-manual][hidden], [data-shipping-profit-link][hidden] { display:none !important; }
 @media(max-width:560px) { .shipping-calculation .cost-breakdown { font-size:12px; } .shipping-calculation dd { max-width:145px; } }
+
+.shipping-mapping { min-width:0; overflow-wrap:anywhere; }
+.shipping-mapping .table-wrap { max-width:100%; }
+.shipping-mapping-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; margin:16px 0; }
+.shipping-mapping-pair label { min-width:0; }
+.shipping-mapping-pair input, .shipping-mapping-pair select { width:100%; box-sizing:border-box; min-width:0; }
+.shipping-mapping details { margin:20px 0; }
+@media(max-width:560px) { .shipping-mapping-pair { grid-template-columns:minmax(0,1fr); gap:8px; } }
+
+.shipping-source-scroll { overflow-x:auto; max-width:100%; }
+.shipping-source-samples { width:max-content; }
+.shipping-source-samples th, .shipping-source-samples td { width:160px; min-width:112px; max-width:240px; white-space:normal; overflow-wrap:anywhere; }
+.shipping-source-samples th:first-child, .shipping-source-samples td:first-child { width:56px; min-width:56px; max-width:56px; }
