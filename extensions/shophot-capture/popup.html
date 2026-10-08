@@ -1,4 +1,6 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ShopHot 采集</title><link rel="stylesheet" href="popup.css"></head>
-<body><h1>保存当前报价</h1><p>在正常商品页选择规格，待报价更新后点击采集。</p>
-<button id="capture" type="button">采集到 ShopHot</button><p id="status" role="status" aria-live="polite">准备采集</p>
-<p class="note">本地预览核对后，点击确认才会保存。收货国家与未提供的条件保持未知。</p><script type="module" src="popup.mjs"></script></body></html>
+<body><header><h1>保存当前报价</h1><p id="version" class="note">安装版本读取中</p></header><p>在正常商品页选择规格，待报价更新后点击采集。</p>
+<button id="capture" type="button">采集到 ShopHot</button><p id="status" role="status" aria-live="polite">正在读取上次采集状态…</p>
+<p class="note">此处显示扩展的采集记录，不代表本地服务正在运行。预览中核对并点击确认才会保存。</p>
+<nav aria-label="本地使用帮助"><a id="open-shophot" href="http://127.0.0.1:8000/" target="_blank" rel="noopener noreferrer">打开 ShopHot / 登录</a><a id="open-guide" href="http://127.0.0.1:8000/browser/capture/" target="_blank" rel="noopener noreferrer">安装说明 / 接收页</a></nav>
+<p class="note">固定接收地址：127.0.0.1:8000。连接失败时先启动本地服务；升级后在扩展管理页重新加载固定目录，再刷新商品页。收货国家与未提供的条件保持未知。</p><script type="module" src="popup.mjs"></script></body></html>

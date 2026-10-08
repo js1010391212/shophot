@@ -12,6 +12,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from .browser_capture import parse_capture, sign_preview
 from .browser_capture_records import private_groups, save_preview
+from .browser_capture_package import extension_version
 from .models import Product, Snapshot
 from .browser_capture_targets import identify_capture_target as identify_target
 
@@ -71,14 +72,14 @@ def _post_fields(request, required):
 
 
 def _error(request, exc):
-    return render(request, 'market/browser_capture.html', {'error': ' '.join(exc.messages)}, status=400)
+    return render(request, 'market/browser_capture.html', {'error': ' '.join(exc.messages), 'extension_version': extension_version()}, status=400)
 
 
 @login_required
 @require_http_methods(['GET', 'POST'])
 def preview(request):
     if request.method == 'GET':
-        return render(request, 'market/browser_capture.html', {'bridge_ready': True})
+        return render(request, 'market/browser_capture.html', {'bridge_ready': True, 'extension_version': extension_version()})
     try:
         fields = _post_fields(request, {'target_url', 'capture'})
         platform, target = identify_target(fields['target_url'])
