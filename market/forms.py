@@ -72,7 +72,7 @@ class ProfitForm(forms.Form):
     selling_price = forms.DecimalField(label="商品售价", min_value=0, max_digits=12, decimal_places=2)
     exchange_rate = forms.DecimalField(label="手动汇率", required=False, min_value=Decimal("0.000001"), max_digits=12, decimal_places=6,
                                        widget=forms.NumberInput(attrs={"placeholder": "填写实际换算汇率"}))
-    discount_rate = forms.DecimalField(label="售价折扣（%）", required=False, min_value=0, max_value=100, decimal_places=2, initial=0)
+    discount_rate = forms.DecimalField(label="售价减价比例（%）", help_text="0% 为原价；10% 表示减去原价的 10%，按原价的 90% 成交。", required=False, min_value=0, max_value=100, decimal_places=2, initial=0)
     cost = forms.DecimalField(label="单件采购成本", min_value=0, max_digits=12, decimal_places=2)
     shipping = forms.DecimalField(label="单件履约运费", min_value=0, max_digits=12, decimal_places=2)
     ad_cost = forms.DecimalField(label="单件广告成本", required=False, min_value=0, max_digits=12, decimal_places=2, initial=0)

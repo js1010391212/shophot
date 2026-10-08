@@ -19,7 +19,7 @@
 | 候选清单 | `candidates.py`；CatalogCandidate | 清单/编辑模板；现有候选视图下一次修改时可迁出 `views.py` | `test_candidates.py`，归属、重复、恢复、跨目录关联 |
 | 浏览器主动观测 | `browser_capture.py` / `browser_capture_targets.py` / `ebay.py` / `browser_capture_records.py` / 固定资源 `browser_capture_package.py`；Snapshot browser账号归属 | `browser_capture_views.py`、预览/私有报告模板、首页browser_recent私有卡片、独立CSS；Chrome扩展 `extensions/shophot-capture/` | `test_browser_capture*` / `test_ebay.py`，账号/CSRF/签名/幂等/并发/公共数据隔离；Node专项及真实DOM证据，实站范围见扩展README |
 | 物流核算与报价导入 | `shipping.py` / `shipping_forms.py` / `shipping_import.py` / `shipping_mapping.py`；ShippingRate，公开参考独立目录 | `shipping_views.py` / shipping 模板与 partial / `shipping.js` / `shipping.css`，利润内直接选择报价 | `test_shipping.py` / `test_shipping_mapping.py`，重量/燃油/币种/尾差、标准模板兼容、自有列及共同值、原行号/日期epoch/公式拒绝、签名归属/CSRF/幂等；来源与限制见 SHIPPING_MODULE.md |
-| 利润工具 | `profit.py` 的 ledger 与定价反算、LogisticsProfitForm（复用 ProfitForm） | `profit.html`、`profit.js`、物流 partial | `test_profit.py`，币种、折扣、逐项舍入对账与实际达标价；物流 POST 重新核算 |
+| 利润工具 | `profit.py` 的 ledger 与定价反算，`profit_pricing.py` 零固定成本舍入边界；LogisticsProfitForm（复用 ProfitForm） | `profit.html`、`profit.js`、物流 partial | `test_profit.py` / `test_profit_flow.py` / `test_profit_pricing.py`，币种、减价比例、逐项舍入、HTMX元数据更新与最小达标价/有界搜索；物流 POST 重新核算 |
 | 公共界面 | `ui.css`、`ui.js`、`base.html`、`partials/navigation.html`、`partials/research_filters.html` | 导航、布局、表单层级、手机菜单 | 浏览器桌面/移动及键盘验证 |
 | 跟踪价格历史与导入 | Product / Snapshot、`importing.py`、现有视图 | 商品跟踪报告、导入、历史对比 | `tests.py`，快照顺序、导入原子性、CSV 安全 |
 

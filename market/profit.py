@@ -1,5 +1,6 @@
 """单件利润场景计算：Decimal 精确计算，汇率由用户提供。"""
 from decimal import Decimal, ROUND_HALF_UP, ROUND_CEILING
+from .profit_pricing import zero_fixed_price
 
 HUNDRED = Decimal('100')
 CENT = Decimal('0.01')
@@ -32,9 +33,13 @@ def recommended_price(data, margin=None):
     fixed = sum((money(data[key]) for key in ('cost', 'shipping', 'other_cost', 'ad_cost', 'payment_fixed')), Decimal('0'))
     denominator = 1 - fee_rate - target
     if denominator <= 0:
-        if margin is None and fixed == 0:
+        if fixed:
+            # 两笔比例费用各节省严格少于半分，不足抵消至少一分固定成本。
+            return None
+        if margin is None:
             return Decimal('0.00')
-        return None
+        price = zero_fixed_price(data['fee_rate'], data['payment_fee_rate'], margin, data['exchange_rate'])
+        return money(price) if price is not None else None
     error_bound = sum((Decimal('.005') for key in ('fee_rate', 'payment_fee_rate') if data[key]), Decimal('0'))
     lower = max(Decimal('0'), (fixed - error_bound) / denominator)
     revenue_floor = lower.quantize(CENT, rounding=ROUND_CEILING)
