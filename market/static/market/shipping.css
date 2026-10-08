@@ -14,5 +14,5 @@
 .shipping-rate-list td small { display:block; color:var(--muted); margin-top:5px; }
 .shipping-rate-list td { max-width:320px; overflow-wrap:anywhere; }
 .shipping-inline-link { display:inline-block; margin:10px 0; }
-[data-shipping-panel][hidden], [data-shipping-manual][hidden] { display:none; }
+[data-shipping-panel][hidden], [data-shipping-manual][hidden], [data-shipping-profit-link][hidden] { display:none !important; }
 @media(max-width:560px) { .shipping-calculation .cost-breakdown { font-size:12px; } .shipping-calculation dd { max-width:145px; } }

@@ -393,3 +393,17 @@
 - 用户询问MySQL与PostgreSQL差异，已说明表/SQL/索引/事务概念通用、驱动/部分语法/约束不同；没有切库指令，保持PostgreSQL。最终服务session62356，单worker与runserver；未提交/推送/部署。
 
 末次真实评论词频与证据截图：.local/platform-validation/product-reviews-charts.png，页面保留/products/5/reviews/。
+
+## 2026-10-08 物流模块与利润舍入 R1 交接（待负责人集成）
+
+- 新增 ShippingRate 私有报价与迁移0011（已应用），shipping / shipping_forms / shipping_import / shipping_views 与专属模板/partial/JS/CSS；利润可手填运费或按报价后端重算，独立物流页可带参数进入利润。文件范围、公式和运价链接详见 SHIPPING_MODULE.md。
+- 支持每公斤/首重续重、向上进位、未舍入体积重、燃油基数选项、每票费、明确附加费、换汇、同款整包均分/尾差；检查所有权、暂停、有效期与重量上限。未知必要费用不补0。公开参考为顺丰2026国际特惠包裹第4页的8条线路、0.5–5kg、CNY、体积系数5000、0.5kg进位、1月20日生效、10月8日查阅；非协议价/实时价，不含附加费，超范围不外推，负责人已复核。递四方没有可用通用数值，不编造报价。
+- CSV/XLSX整表预览→账号签名（20分钟）→确认事务保存；去重不覆盖，失败无部分保存。公式拒绝，Excel 1900/1904日期、共享文本/内嵌文本及UTF-8/GB18030 CSV支持；2MB/100条、ZIP/XML边界。正式空Excel模板以artifact-tool生成、四个范围渲染检查，并用其副本验证读取。业务库ShippingRate=0，浏览器测试文件只预览、不确认保存。
+- 初轮专项31项、全套213项通过。负责人复核R1后修复 profit.py ledger：折后价先舍入、收入换汇再舍入、比例费按成本币种收入逐项舍入；总成本相加展示项，净利直接相减。建议价按误差界及可达收入档搜索并实际验算，不假设净利逐分单调，不只连续公式进位；范围外不提供建议。
+- R1回归/网页复现：售价0.05、两费各10%、无其他成本→每项0.01、总费0.02、净利0.03。折扣0.11×50%→成交0.06、汇率7→收入0.42；包含小金额非单调保本、目标价、极小汇率与金额范围。另修正非法首重校验KeyError、中文日期默认格式（显式ISO）和目的地必选。测试下载响应改为客户端消费流，避免直接close破坏测试事务，生产逻辑未改。
+- 末次 `.venv/bin/python manage.py test market.test_profit market.test_shipping --noinput` **36项通过，8.223s**，日志 `.local/shipping-artifacts/final-module-tests.log`。全套213项通过在R1之前，按负责人安排最终整合全套由负责人统一执行。此后仅修正已在浏览器复核的旧结果链接隐藏样式/缓存版本，未改后端。makemigrations --check --dry-run无变化、Django check通过、git diff --check通过。
+- 实际浏览器：桌面/390px无页面横向溢出；0.501kg→1kg、US基础运价372CNY进入利润；切换币种清空售价/物流两汇率；手填/报价切换；Excel手机与CSV桌面预览；非法首重显示具体错误；默认日期ISO/目的地空选；299CNY整包3件→99.67单件并展示0.01尾差；修改输入提示旧结果且真正隐藏带入链接（shipping.css/js版本2），重算恢复。燃油/其他填0仅为核算测试假设，不是实际全包运价。
+- 截图 `.local/shipping-artifacts/logistics-desktop.png` / logistics-mobile.png / import-desktop.png / import-mobile.png / manual-invalid.png / profit-rounding-desktop.png / profit-rounding-mobile.png。截图、夹具、构建脚本及日志不进Git。唯一正式模板 `market/data/outputs/logistics-20261008/shipping_rates_template.xlsx`。
+- 最终服务session80659；父脚本19253、worker19263、runserver19264，127.0.0.1:8000，单worker，PostgreSQL迁移0011已应用。停止前须重新查PID。浏览器留物流核算页。
+- 实际合同/妻子报价表未提供，尚不能声称实账对账完成；合同原币费率/其他舍入口径需适配。未接实时汇率/燃油/运价/关税、海外仓分级、任意私有多级矩阵、多款混装分摊或利润场景保存。平台攻坚不在本轮扩大。
+- Git只读及fetch：HEAD与origin/main同9bb1561、main；本团队未提交/推送/合并/部署。已读负责人协调安排，未改AGENTS.md/TEAM_COORDINATION.md。由负责人审查后统一建立多轮未提交成果基线，勿把混合目录当本轮独立提交。本轮交付后停止业务写入。

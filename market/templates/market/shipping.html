@@ -1,7 +1,7 @@
 {% extends 'market/base.html' %}{% load static %}
 {% block title %}物流报价 · ShopHot{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'market/shipping.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'market/shipping.css' %}?v=2">
 <div class="heading"><div><p class="eyebrow">SHIPPING COST</p><h1>物流报价与核算</h1><p class="muted">选择线路、填写包装数据，算出可核对的单件物流成本。</p></div><a class="button secondary" href="{% url 'profit' %}">返回利润工具</a></div>
 <div class="profit-layout">
 <section class="card"><h2>估算物流费用</h2><form method="post" id="shipping-estimate-form">{% csrf_token %}

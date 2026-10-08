@@ -183,6 +183,14 @@ class ShippingWorkflowTests(TestCase):
         self.assertEqual(ShippingRate.objects.count(), 0)
         self.assertEqual(len(response.context['form'].quotes), 8)
 
+    def test_manual_rate_date_is_browser_iso_and_destination_is_explicit(self):
+        response = self.client.get(reverse('shipping_rate_add'))
+        self.assertIn(f'value="{timezone.localdate().isoformat()}"', str(response.context['form']['effective_from']))
+        self.assertEqual(response.context['form']['destination'].value(), None)
+        form = ShippingRateForm(rate_data(destination=''))
+        self.assertFalse(form.is_valid())
+        self.assertIn('destination', form.errors)
+
     def test_required_dimensions_and_unknown_fees_block_estimate(self):
         for name in ('package_weight', 'package_units', 'package_length', 'package_width', 'package_height', 'fuel_rate', 'shipping_extra'):
             response = self.client.post(reverse('shipping'), dict(self.estimate_data, **{name: ''}))

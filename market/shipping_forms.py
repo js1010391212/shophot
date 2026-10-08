@@ -16,8 +16,8 @@ class ShippingRateForm(forms.ModelForm):
     class Meta:
         model = ShippingRate
         fields = RATE_FIELDS
-        widgets = {'effective_from': forms.DateInput(attrs={'type': 'date'}),
-                   'effective_until': forms.DateInput(attrs={'type': 'date'}),
+        widgets = {'effective_from': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+                   'effective_until': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
                    'notes': forms.Textarea(attrs={'rows': 3}),
                    'volume_divisor': forms.NumberInput(attrs={'placeholder': '如 5000；留空表示合同明确不计体积重'})}
 

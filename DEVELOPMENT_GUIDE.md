@@ -16,7 +16,8 @@
 | 定时价格监测 | `price_monitoring.py`；PriceMonitor / StorePriceJob，现有 worker 调度 | `price_monitoring_views.py`、`price_monitoring_forms.py`、监测清单/设置模板 | `test_price_monitoring.py`，到期、共享队列、目录重排、归属、暂停恢复、失败退避与历史保留 |
 | 评论分析与观测历史 | `review_analysis.py` / `product_reviews.py` / ProductReviewBatch；复用 Snapshot 与已有目录样本 | `product_review_forms.py` / `product_review_views.py` / `product_reviews.html`；导入预览与商品报告入口；复用 review_analysis 图表 | `test_product_reviews.py` / `test_review_analysis.py` / `test_reviews.py`；归属/去重/历史/证据/未知/否定/目录复用 |
 | 候选清单 | `candidates.py`；CatalogCandidate | 清单/编辑模板；现有候选视图下一次修改时可迁出 `views.py` | `test_candidates.py`，归属、重复、恢复、跨目录关联 |
-| 利润工具 | `profit.py`、ProfitForm | `profit.html`、`profit.js` | `test_profit.py`，币种与手动汇率、费用和保本 |
+| 物流核算与报价导入 | `shipping.py` / `shipping_forms.py` / `shipping_import.py`；ShippingRate，公开参考独立目录 | `shipping_views.py` / shipping 模板与 partial / `shipping.js` / `shipping.css`，利润内直接选择报价 | `test_shipping.py`，重量边界、燃油基数、币种、尾差、原子导入/日期/公式拒绝/账号隔离；来源与限制见 SHIPPING_MODULE.md |
+| 利润工具 | `profit.py` 的 ledger 与定价反算、LogisticsProfitForm（复用 ProfitForm） | `profit.html`、`profit.js`、物流 partial | `test_profit.py`，币种、折扣、逐项舍入对账与实际达标价；物流 POST 重新核算 |
 | 公共界面 | `ui.css`、`ui.js`、`base.html`、`partials/navigation.html`、`partials/research_filters.html` | 导航、布局、表单层级、手机菜单 | 浏览器桌面/移动及键盘验证 |
 | 跟踪价格历史与导入 | Product / Snapshot、`importing.py`、现有视图 | 商品跟踪报告、导入、历史对比 | `tests.py`，快照顺序、导入原子性、CSV 安全 |
 

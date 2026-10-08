@@ -94,14 +94,16 @@ class ProfitScenarioTests(TestCase):
 
     def test_recommended_prices_meet_actual_rounded_ledger_and_are_minimal(self):
         from .profit import calculate_profit, ledger
-        # 旧连续理论价 .025 进位 .03，在两项10%舍入后不能保本。
-        cases = [dict(cost='.02', fee_rate='10', payment_fee_rate='10', exchange_rate='1', target_margin='20'),
+        # 旧连续理论价 .05，在两项10%舍入后亏 .01；.04 反而可保本，净利并非逐分单调。
+        cases = [dict(cost='.04', fee_rate='10', payment_fee_rate='10', exchange_rate='1', target_margin='20'),
                  dict(cost='.17', fee_rate='33.33', payment_fee_rate='22.22', exchange_rate='7', target_margin='10'),
                  dict(cost='0', fee_rate='10', payment_fee_rate='10', exchange_rate='.000001', target_margin='20'),
                  dict(cost='1', fee_rate='99.99', payment_fee_rate='0', exchange_rate='1', target_margin='0')]
         for case in cases:
-            data = {key: Decimal(value) for key, value in dict(selling_price='1', cost='0', shipping='0', other_cost='0',
-                ad_cost='0', payment_fixed='0', discount_rate='0', exchange_rate='1', fee_rate='0', payment_fee_rate='0', target_margin='20', **case).items()}
+            values = dict(selling_price='1', cost='0', shipping='0', other_cost='0', ad_cost='0', payment_fixed='0',
+                          discount_rate='0', exchange_rate='1', fee_rate='0', payment_fee_rate='0', target_margin='20')
+            values.update(case)
+            data = {key: Decimal(value) for key, value in values.items()}
             data.update(sale_currency='USD', cost_currency='CNY')
             with self.subTest(case=case):
                 result = calculate_profit(data)
@@ -112,14 +114,18 @@ class ProfitScenarioTests(TestCase):
                     self.assertGreaterEqual(net, revenue * (margin or 0) / 100)
                     if margin is not None:
                         self.assertGreater(revenue, 0)
-                    # 独立穷举比建议价更低的相邻可达收入档，不借助连续公式。
+                    # 验算前一分钱不达标；低金额样例还逐分穷举更低价格，覆盖非单调净利。
                     if price > 0:
                         previous_revenue, _, _, _, previous_net = ledger(price - Decimal('.01'), data)
                         self.assertTrue(previous_net < previous_revenue * (margin or 0) / 100 or (margin is not None and previous_revenue == 0))
-        first = {key: Decimal(value) for key, value in dict(selling_price='1', cost='.02', shipping='0', other_cost='0',
+                    if price <= Decimal('1'):
+                        for cents in range(int(price * 100)):
+                            r, _, _, _, n = ledger(Decimal(cents) / 100, data)
+                            self.assertTrue(n < r * (margin or 0) / 100 or (margin is not None and r == 0))
+        first = {key: Decimal(value) for key, value in dict(selling_price='1', cost='.04', shipping='0', other_cost='0',
             ad_cost='0', payment_fixed='0', discount_rate='0', exchange_rate='1', fee_rate='10', payment_fee_rate='10', target_margin='20').items()}
         first.update(sale_currency='USD', cost_currency='USD')
-        self.assertEqual(calculate_profit(first)['breakeven'], Decimal('.02'))
+        self.assertEqual(calculate_profit(first)['breakeven'], Decimal('.04'))
 
     def test_price_recommendation_outside_input_range_is_unavailable(self):
         result = self.result(cost='9999999999.99', shipping='0', other_cost='0', ad_cost='0', payment_fixed='0',

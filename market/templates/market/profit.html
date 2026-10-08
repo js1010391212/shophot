@@ -1,7 +1,7 @@
 {% extends 'market/base.html' %}{% load static %}
 {% block title %}利润工具 · ShopHot{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'market/shipping.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'market/shipping.css' %}?v=2">
 <div class="heading"><div><p class="eyebrow">UNIT ECONOMICS</p><h1>单件利润工作台</h1><p class="muted">把售价、履约和获客成本放在一起，算清一单能留下多少。</p></div><a href="{% url 'profit' %}" class="button secondary">重置场景</a></div>
 {% if reference %}<div class="notice">以「{{ reference.title }}」最新观测价格作为假设售价。请填写自己的实际成本；结果不代表该竞品的真实利润。</div>{% endif %}
 <div id="profit-workspace" class="profit-layout">
@@ -19,8 +19,8 @@
 <div class="profit-total {% if result.negative %}loss{% endif %}"><small>{% if result.negative %}预计单件亏损{% else %}预计单件利润{% endif %}</small><strong>{{ result.net }} <span>{{ result.cost_currency }}</span></strong><p>折合 {{ result.sale_net }} {{ result.sale_currency }}</p></div>
 <div class="result-pair"><div><small>利润率</small><strong>{% if result.margin is not None %}{{ result.margin }}%{% else %}—{% endif %}</strong></div><div><small>成本回报率</small><strong>{% if result.roi is not None %}{{ result.roi }}%{% else %}—{% endif %}</strong></div></div>
 <h3>费用拆解 · {{ result.cost_currency }}</h3><dl class="cost-breakdown"><dt>折后收入</dt><dd>{{ result.revenue }}</dd>{% for label,value in result.costs %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}<dt>平台费用</dt><dd>{{ result.fee }}</dd><dt>支付费用（含固定费）</dt><dd>{{ result.payment_fee }}</dd><dt class="total-line">总成本与费用</dt><dd class="total-line">{{ result.expenses }}</dd></dl>
-<div class="pricing-insight"><h3>定价参考 · {{ result.sale_currency }}</h3><p>保本成交价 <strong>{% if result.breakeven is not None %}{{ result.breakeven }}{% else %}无法达到（费率合计 100%）{% endif %}</strong></p><p>目标利润率 {{ result.target_margin }}% 的成交价 <strong>{% if result.target_price is not None %}{{ result.target_price }}{% else %}无法达到（目标利润率与费率合计 ≥ 100%）{% endif %}</strong></p><small>以上为折后成交价，按当前单件成本及费率计算。利润率 = 利润 ÷ 收入；成本回报率 = 利润 ÷ 总成本。分母为零时显示 —。</small></div>
-<p class="helptext">本次换算：1 {{ result.sale_currency }} = {{ result.rate }} {{ result.cost_currency }}。折后售价 {{ result.discounted_price }} {{ result.sale_currency }}。</p>
+<div class="pricing-insight"><h3>定价参考 · {{ result.sale_currency }}</h3><p>保本成交价 <strong>{% if result.breakeven is not None %}{{ result.breakeven }}{% else %}当前费率或金额范围内不提供建议价{% endif %}</strong></p><p>目标利润率 {{ result.target_margin }}% 的成交价 <strong>{% if result.target_price is not None %}{{ result.target_price }}{% else %}当前费率、目标或金额范围内不提供建议价{% endif %}</strong></p><small>以上为折后成交价，已按同一舍入口径反算并核对达标；无需再次减折扣。利润率 = 利润 ÷ 收入；成本回报率 = 利润 ÷ 总成本。分母为零时显示 —。</small></div>
+<p class="helptext">核算口径：折后成交价先保留 2 位小数，再换算并舍入收入；比例费用按成本币种收入逐项四舍五入至 2 位小数。总成本直接相加展示分项，净利 = 收入 − 总成本。<br>本次换算：1 {{ result.sale_currency }} = {{ result.rate }} {{ result.cost_currency }}。折后售价 {{ result.discounted_price }} {{ result.sale_currency }}。</p>
 {% if shipping_result %}{% include 'market/partials/shipping_result.html' %}{% endif %}
 {% else %}<div class="empty"><div class="profit-placeholder">∑</div><h3>{% if form.errors %}修正输入后重新计算{% else %}先建立一个利润场景{% endif %}</h3><p>选择币种、填写售价和成本后，查看费用拆解、利润率与保本价格。</p></div>{% endif %}
 <p class="muted">估算按单件商品计算，不包含你未填写的税费或费用。结果不会保存到数据库。</p>

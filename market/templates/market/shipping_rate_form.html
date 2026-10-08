@@ -1,6 +1,6 @@
 {% extends 'market/base.html' %}{% load static %}
 {% block title %}保存物流报价 · ShopHot{% endblock %}
-{% block content %}<link rel="stylesheet" href="{% static 'market/shipping.css' %}?v=1">
+{% block content %}<link rel="stylesheet" href="{% static 'market/shipping.css' %}?v=2">
 <div class="heading"><div><p class="eyebrow">MY SHIPPING RATE</p><h1>{% if rate %}编辑{% else %}添加{% endif %}物流报价</h1><p class="muted">按物流商合同填写基础运价和适用条件；不要将未核实费用当成免费。</p></div><a class="button secondary" href="{% url 'shipping' %}">返回物流报价</a></div>
 <section class="card shipping-form"><form method="post" id="shipping-rate-form">{% csrf_token %}
 {% if form.errors %}<div class="notice error" role="alert">请核对输入。{{ form.non_field_errors }}</div>{% endif %}

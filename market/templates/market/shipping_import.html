@@ -1,6 +1,6 @@
 {% extends 'market/base.html' %}{% load static %}
 {% block title %}导入物流报价 · ShopHot{% endblock %}
-{% block content %}<link rel="stylesheet" href="{% static 'market/shipping.css' %}?v=1">
+{% block content %}<link rel="stylesheet" href="{% static 'market/shipping.css' %}?v=2">
 <div class="heading"><div><p class="eyebrow">SHIPPING RATE IMPORT</p><h1>导入物流报价表</h1><p class="muted">整表校验 → 核对预览 → 确认保存。已有报价不会被覆盖。</p></div><a class="button secondary" href="{% url 'shipping' %}">返回物流报价</a></div>
 <section class="card shipping-form"><h2>1. 整理报价数据</h2><div class="shipping-actions"><a class="button secondary" href="{% url 'shipping_template' 'xlsx' %}">下载 Excel 模板</a><a class="button secondary" href="{% url 'shipping_template' 'csv' %}">下载 CSV 模板</a></div>
 <p>Excel 使用“物流报价”工作表，第一行保持模板表头，第二行起填写真实报价。每行是一条线路的一套计费规则，一次最多 100 条、文件不超过 2 MB。</p><p class="helptext">国家代码如 CN / US / GB，币种如 CNY / USD / EUR。计费方式填 per_kg 或 first_step，燃油基数填 freight（仅运价）或 subtotal（运价加每票费）。日期填 yyyy-mm-dd。CSV 支持 UTF-8 / GB18030。</p><p class="helptext">不读取公式的缓存金额。请先复制公式结果并“粘贴为数值”，去掉合并单元格，再导入。未知价格不能留空或填 0 代替。</p>
