@@ -427,3 +427,15 @@
 - 新market/browser_capture.py与test_browser_capture.py，复用identify_target/平台链接规范化/QuoteTarget/共享金额币种校验，不新建模型/路由/业务入口。严格协议字段、UUID/版本、服务器目标商品/规格、明确当前报价十进制字符串、带时区新鲜时间、有界可见证据与条件；未知国家/规格保留null，拒绝额外cookies/html/token/owner字段。契约不是认证，也不能证明DOM真实性；幂等和签名保存留后续。
 - `.venv/bin/python manage.py test market.test_browser_capture --noinput`：8项通过、0.051秒，SimpleTestCase无需数据库；包含错误身份/多规格、浮点/区间/未知价格、过期/非法日期/无时区、协议与凭据字段、边界及OTTO目标。更新开发指南/数据获取方案/续接；没有共享服务或UI行为变化，沿用既有237项基线，不重复全套或截图。
 - 后续先实站验证DOM与两个规格，再由本地接登录/CSRF/20分钟签名预览和POST确认；协调浏览器来源及国家/报价条件隔离，不能直接套用文件MANUAL文字。扩展、API与实站仍未打通。
+
+
+## 2026-10-08：1%停止阈值与B1 JSON接收边界
+
+- 用户最新明确“最大利用率，剩余1%再停止”，覆盖原15%暂停；AGENTS/TEAM_COORDINATION/线程heartbeat统一改≤1%停止、1%–30%单个可收尾任务、>30%按依赖并行，保留medium/high分工，不做重复工作填充额度。
+- B1已在PR #3合入main 3a0eb81aec2ca224071052cb055022f264b18a32。本次只扩展独立browser_capture服务：parse_capture接收最大16KiB UTF-8字节JSON，拒绝任意层重复字段、NaN/Infinity、非法编码/格式与过深嵌套；文字拒绝孤立Unicode代理和可能导致数据库保存错误的控制字，保留中文、emoji及换行/制表证据。
+- 13项SimpleTestCase专项通过：包含精确正文长度边界、重复price/sku与嵌套键、坏编码/JSON/常量/深度、Unicode和控制字符。服务不访问数据库/网络、不保存，无共享服务/模型/UI变化，既有237项基线不重复运行；Django check与diff检查作为交付收尾。
+- 下一模块仍为真实商品DOM验证及扩展/预览/确认链路，当前不能宣称实站已支持。原服务继续单worker session79504。
+
+- 同轮继续完成sign_preview/load_preview纯服务：只为校验通过的观测签名，独立salt，绑定账号/商品/当前规范URL与20分钟期限。页面控制器仍须验证登录/CSRF、提供可信账号和商品、锁定当前商品后复核URL，服务不保存或证明实站真实性。
+- 最终专项18项通过（0.061秒），追加换账号/商品/SKU、签名篡改/过期、文件token混用、匿名或无效商品及非法报价不签名；保留原观测时间。签名在正常预览期限内读取，不把原观测更新成确认时间。未重复237项全套；后续需要路由/UI/权限/保存及真实DOM验收。
+- 负责人独立补充470种字段类型/随机编码扰动审查，全部返回有效规范结果或ValidationError，无未处理异常；未访问数据库或网络。

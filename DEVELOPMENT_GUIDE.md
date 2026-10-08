@@ -6,7 +6,7 @@
 
 | 模块 | 服务 / 数据 | 页面与交互 | 主要验证 |
 | --- | --- | --- | --- |
-| 浏览器观测契约（B1） | `browser_capture.py`，复用链接规范化/QuoteTarget/金额校验，只校验不保存 | 扩展、路由、预览和确认尚未接入 | `test_browser_capture.py`：输入边界、商品/规格冲突、时间及未知值；实站未验收 |
+| 浏览器观测契约（B1） | `browser_capture.py`，有界JSON接收/账号商品签名预览，复用链接规范化/QuoteTarget/金额校验，不保存 | 扩展、路由、预览和确认尚未接入 | `test_browser_capture.py`：编码/重复键/输入边界、商品规格/签名归属及过期；实站未验收 |
 | 商品页面文件导入 | `page_import.py` / `structured_page.py` / `page_import_forms.py`；复用 Product / Snapshot；`otto.py` 保留链接规范化 | `page_import_views.py` / `page_import{,_start}.html`；首页、失败页、商品报告入口；旧 OTTO URL/表单兼容 | `test_page_import.py` / `test_otto.py`；身份/规格/未知值、签名归属与过期、CSRF、历史保护；真实文件兼容性待验收 |
 | 平台识别与验收 | `platforms.py`；`AnalyzeForm`；只读 `scripts/validate_platform_samples.py` | 首页与现有分析表单明确提示未接入平台 | `test_platforms.py`，真实域名/边界、兼容、不误排队；实站见 CROSS_PLATFORM_VALIDATION.md |
 | 分析流程 | `workflows.py`、`jobs.py`；StoreDiscovery / CollectionJob | `workflow_views.py`、`workflow.html`、`workflow.js` | `test_workflows.py`，输入到报告、空目录、失败、重试、重复任务 |
