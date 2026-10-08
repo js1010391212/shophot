@@ -1,0 +1,11 @@
+{% extends 'market/base.html' %}{% load static %}
+{% block title %}保存物流报价 · ShopHot{% endblock %}
+{% block content %}<link rel="stylesheet" href="{% static 'market/shipping.css' %}?v=1">
+<div class="heading"><div><p class="eyebrow">MY SHIPPING RATE</p><h1>{% if rate %}编辑{% else %}添加{% endif %}物流报价</h1><p class="muted">按物流商合同填写基础运价和适用条件；不要将未核实费用当成免费。</p></div><a class="button secondary" href="{% url 'shipping' %}">返回物流报价</a></div>
+<section class="card shipping-form"><form method="post" id="shipping-rate-form">{% csrf_token %}
+{% if form.errors %}<div class="notice error" role="alert">请核对输入。{{ form.non_field_errors }}</div>{% endif %}
+<div class="field-grid">{% for field in form %}<div {% if field.name == 'notes' or field.name == 'source_url' %}class="shipping-wide"{% endif %}>{{ field.label_tag }}{{ field }}{{ field.errors }}{% if field.help_text %}<p class="helptext">{{ field.help_text }}</p>{% endif %}</div>{% endfor %}</div>
+<p class="helptext">每公斤计费：计费重向上按进位单位取整，运输运价 = 计费重 × 每公斤价格。首重续重：首重内用首重价，超过首重按续重单位向上进位。每票固定费另加。只填写所选方式的价格字段。</p>
+<p class="helptext">燃油基数需按合同选择。体积重系数如 5000 / 6000，只有合同明确不计体积重时才留空。重量以 kg 填写，金额保留最多 2 位小数；最低重与进位单位最多 3 位小数。未指定失效日期仍需定期核对。</p>
+<button class="calculate-button" type="submit">保存报价</button></form></section>
+{% endblock %}{% block scripts %}<script src="{% static 'market/shipping.js' %}?v=2" defer></script>{% endblock %}

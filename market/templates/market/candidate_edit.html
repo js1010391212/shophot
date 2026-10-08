@@ -1,0 +1,3 @@
+{% extends 'market/base.html' %}
+{% block title %}编辑选品备注 · ShopHot{% endblock %}
+{% block content %}<div class="heading"><div><h1>编辑研究状态与备注</h1><p>{{ candidate.saved_item.price_title|default:candidate.saved_item.title }}</p><p class="muted">{{ candidate.url }}</p></div><a href="{% url 'candidates' %}">返回候选清单</a></div><section class="card"><form method="post">{% csrf_token %}{{ form.as_p }}<button>保存选品备注</button></form></section>{% endblock %}

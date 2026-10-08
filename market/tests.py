@@ -135,7 +135,7 @@ class WebTests(TestCase):
         self.assertContains(self.client.get(reverse('csv_template')), 'observed_at')
 
     def test_profit_math_zero_revenue_and_validation(self):
-        data = {'selling_price': '20', 'exchange_rate': '7', 'cost': '50', 'shipping': '20', 'fee_rate': '10', 'other_cost': '6'}
+        data = {'sale_currency': 'USD', 'cost_currency': 'CNY', 'selling_price': '20', 'exchange_rate': '7', 'cost': '50', 'shipping': '20', 'fee_rate': '10', 'other_cost': '6'}
         response = self.client.post(reverse('profit'), data)
         self.assertEqual(response.context['result']['net'], Decimal('50.00'))
         self.assertEqual(response.context['result']['margin'], Decimal('35.71'))
@@ -398,8 +398,8 @@ class CompetitorTests(TestCase):
         self.assertTrue(run_next())
         product.refresh_from_db()
         self.assertEqual(product.title, '识别到的竞品')
-        self.assertContains(self.client.get(response.url), '竞品分析摘要')
-        self.assertContains(self.client.get(response.url), '4.80')
+        self.assertContains(self.client.get(response.url,follow=True), '竞品分析摘要')
+        self.assertContains(self.client.get(response.url,follow=True), '4.80')
         self.client.post(url, {'url': 'https://m.aliexpress.com/item/123.html?tracking=other'})
         self.assertEqual(Product.objects.filter(url=product.url).count(), 1)
         self.assertEqual(product.jobs.count(), 2)

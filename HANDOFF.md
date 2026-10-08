@@ -1,3 +1,27 @@
+> 最新续接入口（2026-10-08）：商品评论样本主功能已接通。ProductReviewBatch一对一Snapshot，迁移0010已应用；统一文件导入预览/保存明确商品评论最多10条，未知不补造、重复不新增、冲突保护历史。product_reviews / product_review_forms / product_review_views / product_reviews.html独立模块，复用现有规则图表及原文证据；GET可只读复用同商品已保存目录评论、切换导入观测，来源不合并。完整188项通过，末次12项专项通过（含旧坏链接容错）；migration/check/diff通过。真实Beard Comb Product#5评论报告/products/5/reviews/，只读复用目录#6商品0的7条真实样本，发现5星评论也有尺寸/效果线索。桌面390px、来源切换、证据跳转、空数据及受控文件评论预览均验收。实库Product#4/#5均0快照/0任务、ProductReviewBatch为0，未保存测试数据。最终服务session62356，单worker，未提交/推送/部署。用户询问MySQL差异已说明，未请求切换，继续PostgreSQL。下一步真实OTTO/速卖通文件兼容验收，或按用户方向继续选品模块；全量/动态评论、AI语义与其他平台文件未接入，不启动最终交付。
+
+> 最新续接入口（2026-10-08）：统一商品页面导入模块完成，入口 /import/page/，接入 OTTO 与速卖通 aliexpress.com 严格JSON-LD解析。page_import / structured_page / page_import_forms / page_import_views 独立模块；旧OTTO URL/解析/表单兼容。签名预览→确认保存MANUAL历史，来源/规格/观测时间/文件校验码明确。速卖通sku_id保留并直接导入，自动入口与worker保护不采集通用价格。全套177项通过，最后端口边界专项24项通过；无新迁移，check与diff通过。浏览器测试夹具只预览不保存，Product#4为0快照/0任务；真实商品当前在售未知，真实HTML兼容性待验收，非自动成功。桌面/390px截图与限制见 CROSS_PLATFORM_VALIDATION.md。最终服务session38309，单worker，未提交/推送/部署。下一步取得正常保存的真实OTTO/速卖通HTML核对明确商品规格报价；SHEIN/Ozon文件未接入，不用夹具冒充实站数据。
+
+> 小额度续开发（2026-10-08）：补齐 OTTO 保存HTML步骤、手动来源/动态内容/历史起点说明，报告空数据提供直接导入与手动记录链接，预览含税/运费说明以原页面为准。11项专项通过，桌面与390px展开说明无溢出；截图 .local/platform-validation/otto-help{,-mobile}.png。最终服务session69736。额度刷新后：先验证真实OTTO保存HTML，再将导入流程抽成平台适配入口，优先速卖通；保留各平台身份/规格/币种校验，测试夹具不得混入业务库。尚未实施速卖通HTML适配，不宣称新平台自动支持。
+
+> 最新续接入口（2026-10-08）：OTTO 单品离线 HTML 导入模块完成，首页链接→预览→确认保存 MANUAL 历史；保留 variationId、币种、规格与真实观测时间，签名绑定账号/商品、20分钟过期。自动请求 HTTP400 是 KPSDK 验证，未绕过，尚未接入自动采集/店铺目录/评价正文。真实 Guru-Shop 链接创建 Product#3，无报价和自动任务；真实保存 HTML 兼容性仍待验收，夹具仅在测试库。全套167通过、末次11项OTTO专项通过，迁移无变化。桌面及390px手机无溢出，证据见 CROSS_PLATFORM_VALIDATION.md。服务 session39879，先查实际进程，未提交/推送/部署。下一步取得正常保存的真实 OTTO HTML 样本进行报价归属验收，不能宣称自动成功。
+
+> 最新续接入口：跨平台实站验收完成，详细链接与证据见 CROSS_PLATFORM_VALIDATION.md。OTTO 两卖家商品浏览器可见价格，但安全HTTP400；SHEIN两入口验证，Ozon两店铺连接错误，速卖通店铺验证。自动分析尚未通过。修复首页把非速卖通平台误当Shopify的问题，新platforms.py明确识别并提示未接入，156项全套通过；最终服务session72610，未提交部署。下一建议OTTO单品适配，先解决公开数据获取和身份归属，不宣称已支持新平台。
+
+> 最新续接入口：样本市场分析模块已实现，入口在跨店商品研究页，/research/market/；按最新目录去重、币种独立价格段/中位数、品牌分布、评价覆盖及报价新鲜度，可从图表/链接筛选商品并进入报告。实库 5 家/314 商品/52 报价/3 评论样本商品；全套 152 项通过，末次金额边界专项结果见 DEVELOPMENT_LOG.md。平台计划仍见 PLATFORM_ROADMAP.md，新平台采集尚未接入。继续按模块开发，不启动最终交付。
+
+> 最新续接入口（2026-10-08）：定时价格监测模块已实现，迁移 0009 已应用；从商品报告设置 6/12/24 小时频率，账号隔离、暂停恢复、队列去重、失败退避、跨目录按 URL 匹配，复用单 worker。真实 Beard Comb 监测 #1，任务 #13/#14 写入观测 #51/#52（USD 19–21），最终每日监测启用，下次 10 月 9 日 10:12 CST。全套验证和最终进程状态见 DEVELOPMENT_LOG.md；服务未设系统自启动，停机不采集。用户最新要求后续支持 SHEIN/OTTO/Ozon，并已用截图确认参考插件 Sorftime Save；规划与调研见 PLATFORM_ROADMAP.md，建议下一模块样本市场看板，尚未实施新平台采集。遵守 AGENTS.md，按模块继续；尚未进入最终交付。
+
+> 最新续接入口：先读 [DEVELOPMENT_LOG.md](DEVELOPMENT_LOG.md)、[DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)，遵守 AGENTS.md。独立报价历史模块已完成，按商品链接合并跨目录记录、币种/时间过滤并依据新保存的规格范围比较报价上下限；旧记录不补造走势。真实 Beard Comb 连续两次更新验证，141 项全套通过、末次 5 项专项通过，迁移 0008 已应用。最终服务 session 57638，先查进程。用户要求按模块继续开发；下一模块方向尚未选择，不自动启动最终交付。
+
+## 本地续开发更新（2026-10-07）
+
+v0.2 新增 Shopify 公开商品采集、平台选择、店铺样本研究、采集中心与响应式侧栏。利润工具支持双币种、手动汇率、折扣、支付费用、成本拆分与保本/目标利润率计算。78 项测试在 SQLite 和 PostgreSQL 上均通过。
+
+已解决本地 Fake-IP DNS 兼容和 Shopify text/javascript 响应解析。真实验证结果见 LIVE_VALIDATION.md；速卖通申请步骤见 ALIEXPRESS_API.md。新增公开 sitemap 商品发现，LILYGO 与 TEM Laser 各保存 100 个真实商品链接（截取目录）。PostgreSQL 17.11 已安装并启用；旧数据逐项迁移校验一致，原 SQLite 和导出备份保留。启动见 DATABASE.md。尚未接入官方 API、完整全店目录、销售估算、图片或定时监控。下文为历史基线记录，新增功能以上述更新和 README v0.2 为准。
+
+---
+
 # ShopHot 本地开发交接
 
 整理日期：2026-10-07（北京时间）。本文描述代码基线 `3adc2ab`；本次交接提交只补充文档。

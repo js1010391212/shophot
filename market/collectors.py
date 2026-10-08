@@ -24,9 +24,8 @@ def validate_target(url):
         valid_host = host == "aliexpress.com" or host.endswith(".aliexpress.com")
         if parts.scheme != "https" or not valid_host or parts.port not in (None, 443) or parts.username or parts.password:
             raise CollectionError("当前网页采集仅支持 https://*.aliexpress.com 的商品链接。")
-        addresses = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
-        if not addresses or any(not ipaddress.ip_address(item[4][0]).is_global for item in addresses):
-            raise CollectionError("目标地址不能指向本地或私有网络。")
+        from .network import public_address
+        public_address(host)
     except (ValueError, socket.gaierror) as exc:
         raise CollectionError("商品地址无效或域名无法解析。") from exc
 
@@ -107,7 +106,9 @@ def parse_product(html, target_url=None):
 def collect(url):
     target_url = url
     try:
-        with httpx.Client(timeout=httpx.Timeout(20, connect=10), follow_redirects=False,
+        from .network import PublicProductTransport
+        with httpx.Client(timeout=httpx.Timeout(20, connect=10), follow_redirects=False, trust_env=False,
+                          transport=PublicProductTransport(),
                           headers={"User-Agent": "ShopHot/0.1 (+personal seller analytics)"}) as client:
             for _ in range(5):
                 validate_target(url)
@@ -128,7 +129,10 @@ def collect(url):
                         if size > MAX_BYTES:
                             raise CollectionError("页面超过 2 MB，已停止下载。")
                         chunks.append(chunk)
-                    return parse_product(b"".join(chunks), target_url=target_url)
+                    html = b"".join(chunks)
+                    if b'_____tmd_____' in html or b'x5secdata' in html:
+                        raise CollectionError("速卖通要求访问验证，未取得商品数据。请接入已授权的官方商品 API，或记录实际页面公开数据。")
+                    return parse_product(html, target_url=target_url)
             raise CollectionError("页面重定向次数过多。")
     except httpx.HTTPError as exc:
         # 不把代理信息、带认证参数的请求地址写入日志或用户消息。

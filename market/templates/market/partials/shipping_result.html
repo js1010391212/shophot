@@ -1,0 +1,20 @@
+<div class="shipping-calculation">
+<h3>物流核算明细</h3><p>{{ shipping_result.quote.name }} · {{ shipping_result.quote.route }}</p>
+<dl class="cost-breakdown">
+<dt>整包实重</dt><dd>{{ shipping_result.weight|floatformat:3 }} kg</dd>
+<dt>体积重</dt><dd>{% if shipping_result.volume_weight is not None %}{{ shipping_result.volume_display }} kg{% else %}此报价不计体积重{% endif %}</dd>
+<dt>进位后的计费重</dt><dd>{{ shipping_result.billed_weight|floatformat:3 }} kg</dd>
+<dt>运输运价</dt><dd>{{ shipping_result.freight }} {{ shipping_result.quote.currency }}</dd>
+<dt>每票固定费</dt><dd>{{ shipping_result.fixed_fee }} {{ shipping_result.quote.currency }}</dd>
+<dt>燃油费（基数 {{ shipping_result.fuel_base }} × {{ shipping_result.fuel_rate }}%）</dt><dd>{{ shipping_result.fuel }} {{ shipping_result.quote.currency }}</dd>
+<dt>整包其他物流费用</dt><dd>{{ shipping_result.extra }} {{ shipping_result.quote.currency }}</dd>
+<dt class="total-line">整包物流合计</dt><dd class="total-line">{{ shipping_result.total }} {{ shipping_result.quote.currency }}</dd>
+<dt>整包换算金额</dt><dd>{{ shipping_result.converted_package }} {{ shipping_result.currency }}</dd>
+<dt>同款件数均分</dt><dd>÷ {{ shipping_result.units }}</dd>
+<dt class="total-line">计入利润的单件运费</dt><dd class="total-line">{{ shipping_result.converted }} {{ shipping_result.currency }}</dd>
+</dl>
+{% if shipping_result.volume_weight is not None %}<p class="helptext">体积重：{{ shipping_result.length }} × {{ shipping_result.width }} × {{ shipping_result.height }} cm ÷ {{ shipping_result.quote.volume_divisor }}。使用未舍入的体积重比较与进位，避免在边界误算。</p>{% endif %}
+<p class="helptext">运输运价：{{ shipping_result.pricing_rule }}。燃油基数：{% if shipping_result.quote.fuel_basis == 'subtotal' %}运输运价加每票固定费{% else %}仅运输运价{% endif %}。</p>
+<p class="helptext">物流汇率：1 {{ shipping_result.quote.currency }} = {{ shipping_result.exchange_rate }} {{ shipping_result.currency }}。运输运价、燃油费、整包换算与单件均分均以四舍五入保留 2 位小数核算。{% if shipping_result.allocation_delta %}逐件舍入后的整包差额为 {{ shipping_result.allocation_delta }} {{ shipping_result.currency }}，对账时需分配这笔尾差。{% endif %}</p>
+<details><summary>报价条件与来源</summary><p>{{ shipping_result.quote.notes }}</p><p>报价生效：{{ shipping_result.quote.effective_from|date:'Y-m-d' }}{% if shipping_result.quote.checked_at %} · 资料查阅：{{ shipping_result.quote.checked_at }}{% endif %}。{% if shipping_result.quote.source_url %}<a href="{{ shipping_result.quote.source_url }}" target="_blank" rel="noopener noreferrer">查看来源</a>{% endif %}</p></details>
+</div>

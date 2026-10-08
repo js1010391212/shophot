@@ -1,0 +1,19 @@
+{% extends 'market/base.html' %}{% load static %}
+{% block title %}物流报价 · ShopHot{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'market/shipping.css' %}?v=1">
+<div class="heading"><div><p class="eyebrow">SHIPPING COST</p><h1>物流报价与核算</h1><p class="muted">选择线路、填写包装数据，算出可核对的单件物流成本。</p></div><a class="button secondary" href="{% url 'profit' %}">返回利润工具</a></div>
+<div class="profit-layout">
+<section class="card"><h2>估算物流费用</h2><form method="post" id="shipping-estimate-form">{% csrf_token %}
+{% if form.errors %}<div class="notice error" role="alert">请核对输入。{{ form.non_field_errors }}</div>{% endif %}
+{% include 'market/partials/shipping_inputs.html' with show_cost_currency=True %}
+<button type="submit" class="calculate-button">核算单件运费</button></form></section>
+<section class="card" id="shipping-result" aria-live="polite" data-has-result="{% if result %}true{% else %}false{% endif %}"><p class="notice warning" id="shipping-stale" hidden>输入已修改，请重新核算；下方为上一次结果。</p>{% if result %}{% include 'market/partials/shipping_result.html' with shipping_result=result %}<a class="button" data-shipping-profit-link href="{{ profit_url }}">将这些参数带入利润工具</a>{% else %}<p class="eyebrow">COST BREAKDOWN</p><h2>每笔费用都有计算过程</h2><div class="empty"><h3>填写实际包装数据</h3><p>使用实重与体积重较大者，按报价进位，再加燃油与其他费用，换算币种并按同款件数分摊。</p></div><p class="helptext">网上公布价用于建立参考场景，可能高于货代协议价。没有匹配报价时请保存自己的报价，或在利润工具直接填写实际运费。</p>{% endif %}</section>
+</div>
+<section class="card shipping-rate-list"><div class="heading"><div><h2>我的物流报价</h2><p class="muted">报价仅当前账号可见。导入不覆盖已有报价，过期或暂停的报价不参与计算。</p></div><div class="shipping-actions"><a class="button secondary" href="{% url 'shipping_import' %}">导入报价表</a><a class="button" href="{% url 'shipping_rate_add' %}">手动添加报价</a></div></div>
+{% if rates %}<div class="table-wrap"><table><thead><tr><th>报价 / 承运商</th><th>线路</th><th>计费 / 币种</th><th>生效期</th><th>状态 / 来源</th><th>操作</th></tr></thead><tbody>{% for rate in rates %}<tr><td>{{ rate.name }}<small>{{ rate.carrier }}</small></td><td>{{ rate.origin }} → {{ rate.destination }}</td><td>{{ rate.get_method_display }} · {{ rate.currency }}</td><td>{{ rate.effective_from|date:'Y-m-d' }} 至 {% if rate.effective_until %}{{ rate.effective_until|date:'Y-m-d' }}{% else %}未指定{% endif %}</td><td>{% if not rate.active %}已暂停{% elif rate.effective_from > today %}未生效{% elif rate.effective_until and rate.effective_until < today %}已过期{% else %}使用中{% endif %}<small>{{ rate.get_source_display }}</small></td><td><div class="shipping-actions"><a href="{% url 'shipping_rate_edit' rate.pk %}">编辑</a><form method="post" action="{% url 'shipping_rate_toggle' rate.pk %}">{% csrf_token %}<button class="quiet" type="submit">{% if rate.active %}暂停{% else %}恢复{% endif %}</button></form></div></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty"><h3>还没有自己的报价</h3><p>有货代报价表时可下载模板整理并导入；也可以手动添加一条线路。</p></div>{% endif %}
+</section>
+<details class="card shipping-rate-list"><summary>公开参考价及适用范围</summary><p>顺丰 2026 中国内地出口寄付包裹国际特惠公布价，现提供 {{ public_quotes|length }} 条常用线路及 0.5–5 kg 档位，非协议价。表格生效 2026-01-20，资料查阅 2026-10-08。价格和收寄条件仍需向承运商核实。</p><p>不含燃油、偏远、特殊处理、税项及报关等费用；本模块不推断时效、关税或商品能否收寄。</p><a href="https://www.sf-international.com/cn/sc/support/querySupport/fee_rate" target="_blank" rel="noopener noreferrer">顺丰官方价格表</a></details>
+{{ quote_metadata|json_script:'shipping-quote-metadata' }}
+{% endblock %}
+{% block scripts %}<script src="{% static 'market/shipping.js' %}?v=2" defer></script>{% endblock %}

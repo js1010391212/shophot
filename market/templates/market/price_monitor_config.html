@@ -1,0 +1,6 @@
+{% extends 'market/base.html' %}
+{% block title %}设置价格监测 · ShopHot{% endblock %}
+{% block content %}
+<div class="heading"><div><p class="eyebrow">PRICE MONITORING</p><h1>设置价格监测</h1><p>{{ item.price_title|default:item.title }}</p></div><a class="button secondary" href="{% url 'catalog_detail' scan.pk index %}">返回商品报告</a></div>
+<section class="card"><p><a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">查看目标商品 ↗</a></p><form method="post">{% csrf_token %}{{ form.as_p }}<button>保存监测计划</button></form><p class="muted">新开启或恢复后安排一次采集，随后按所选频率更新。公开报价、币种、规格范围和观测时间保存到数据库；失败不覆盖成功历史，失败后重试间隔逐步延长至最多 72 小时。访问验证或限流时不会绕过限制。</p><p class="muted">仅在 ShopHot 后台采集进程运行时执行。电脑休眠或服务关闭期间不会采集，恢复后只执行一次到期检查，不补造停机期间价格。目前跟踪该商品公开规格报价范围，不包含运费、税费和结账优惠。</p></section>
+{% endblock %}

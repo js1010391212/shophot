@@ -1,6 +1,7 @@
 import time
 from django.core.management.base import BaseCommand
 from market.jobs import run_next
+from market.price_monitoring import tick
 
 
 class Command(BaseCommand):
@@ -13,6 +14,7 @@ class Command(BaseCommand):
         self.stdout.write("ShopHot 采集进程启动，按 Ctrl+C 停止。")
         try:
             while True:
+                tick()
                 if not run_next():
                     if options["once"]:
                         break
