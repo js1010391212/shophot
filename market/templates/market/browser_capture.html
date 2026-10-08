@@ -15,8 +15,11 @@
 </section>
 {% else %}
 <section class="card"><h2>从正常商品页采集</h2><p>在 Chrome 打开商品、正常登录并选好规格，点击 ShopHot 扩展采集。报价会直接进入预览，核对确认后保存，无需复制 HTML。</p>
-<p><a class="button" href="{% url 'browser_capture_download' %}">下载 Chrome 扩展</a></p>
-<details><summary>首次安装与使用</summary><ol><li>解压下载的安装包，在 Chrome 扩展管理页打开开发者模式，选择「加载已解压的扩展程序」，选中 shophot-capture 文件夹。</li><li>先在同一 Chrome 登录 <a href="http://127.0.0.1:8000/" target="_blank" rel="noopener noreferrer">本地 ShopHot</a>，固定扩展图标；在正常商品页选择规格并点击采集。</li><li>本地页面展示商品、规格、报价和条件；核对后点击确认保存，再进入我的报价记录。</li></ol><p>扩展在用户点击时读取当前商品，临时数据只发送至本机 127.0.0.1:8000。Chrome 扩展安装后的完整联调尚待验收。OTTO 两件商品及灯笼两种规格已核对；速卖通和 eBay 适配尚未通过实站验收，所选规格无法确认时会拒绝采集。请正常完成平台登录或验证后重试。</p></details>
+<p class="helptext">可下载扩展版本：<strong>{{ extension_version|default:"版本信息暂不可用" }}</strong>。在扩展弹窗查看「已安装版本」，两者不同请更新。</p>
+<p><a class="button" href="{% url 'browser_capture_download' %}">下载 Chrome 扩展{% if extension_version %} {{ extension_version }}{% endif %}</a></p>
+<details><summary>首次安装与使用</summary><ol><li>解压安装包，在 Chrome 扩展管理页打开开发者模式，选择「加载已解压的扩展程序」，选中 shophot-capture 文件夹。</li><li>先在同一 Chrome 登录 <a href="http://127.0.0.1:8000/" target="_blank" rel="noopener noreferrer">本地 ShopHot</a>，固定扩展图标；在正常商品页选择规格并点击采集。</li><li>本地页面展示商品、规格、报价和条件；核对后点击确认保存，再进入我的报价记录。</li></ol><p>扩展固定发送到本机 127.0.0.1:8000。等待接收、发送成功或显示预览都还没有保存，只有核对后确认才保存。</p></details>
+<details><summary>更新已安装扩展</summary><ol><li>下载并解压新版到原来的固定安装目录，替换旧文件。</li><li>在 Chrome 扩展管理页找到 ShopHot，点击重新加载。若原目录已被移动，请重新选择完整的 shophot-capture 文件夹。</li><li>关闭旧弹窗，重新打开核对已安装版本；刷新原商品页，选好规格后重新采集。</li></ol><p>如果本地服务未运行或登录已过期，先启动并登录本地 ShopHot，再回到原商品页重新点击采集。</p></details>
+<details><summary>当前平台验证范围</summary><ul><li>eBay：0.1.1 已验证一个刊登的安装采集、预览、确认和报告流程；第二个商品及规格切换仍待验证。</li><li>OTTO：已核对两个真实商品及灯笼的两种规格；安装扩展完整点击流程尚未单独验收。</li><li>速卖通：尚未完成真实商品页验收，暂不承诺可用。</li></ul><p>正常完成平台登录或访问验证后再进入商品页。无法确认商品、所选规格或明确报价时会拒绝采集。</p></details>
 <details><summary>高级：手动校验采集 JSON</summary>
 <form id="browser-capture-form" method="post"{% if bridge_ready %} data-browser-capture-bridge="ready"{% endif %}>{% csrf_token %}
 <label>目标商品链接<input name="target_url" type="url" maxlength="500" required></label>
