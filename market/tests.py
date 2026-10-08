@@ -193,7 +193,7 @@ class CollectorTests(TestCase):
                     collect('https://www.aliexpress.com/item/1.html')
 
     def test_http_success_saves_explicit_price(self):
-        html = '<script type="application/ld+json">{"@type":"Product","offers":{"price":"9.90","priceCurrency":"USD"}}</script>'
+        html = '<script type="application/ld+json">{"@type":"Product","url":"https://www.aliexpress.com/item/1.html","offers":{"@type":"Offer","price":"9.90","priceCurrency":"USD"}}</script>'
         transport = httpx.MockTransport(lambda r: httpx.Response(200, headers={'content-type': 'text/html'}, text=html))
         with patch('market.collectors.httpx.Client', return_value=httpx.Client(transport=transport)), patch(
             'market.collectors.socket.getaddrinfo', return_value=[(2, 1, 6, '', ('8.8.8.8', 443))]):
@@ -426,8 +426,8 @@ class CompetitorTests(TestCase):
 class TargetIdentityTests(TestCase):
     def test_recommendation_product_is_not_used_for_target(self):
         nodes = [
-            {'@type': 'Product', 'url': 'https://www.aliexpress.com/item/999.html', 'offers': {'price': 99, 'priceCurrency': 'USD'}},
-            {'@type': 'Product', 'url': 'https://www.aliexpress.com/item/123.html', 'offers': {'price': 12, 'priceCurrency': 'USD'}},
+            {'@type': 'Product', 'url': 'https://www.aliexpress.com/item/999.html', 'offers': {'@type': 'Offer', 'price': 99, 'priceCurrency': 'USD'}},
+            {'@type': 'Product', 'url': 'https://www.aliexpress.com/item/123.html', 'offers': {'@type': 'Offer', 'price': 12, 'priceCurrency': 'USD'}},
         ]
         html = '<script type="application/ld+json">' + json.dumps(nodes) + '</script>'
         self.assertEqual(parse_product(html, target_url='https://www.aliexpress.com/item/123.html')['price'], Decimal('12'))

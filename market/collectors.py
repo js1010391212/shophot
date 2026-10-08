@@ -8,6 +8,7 @@ import httpx
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
 from .validation import clean_count, clean_currency, clean_price, clean_rating
+from .quote_identity import QuoteTarget
 
 MAX_BYTES = 2 * 1024 * 1024
 
@@ -54,33 +55,44 @@ def parse_product(html, target_url=None):
     for script in soup.find_all("script", type="application/ld+json"):
         try:
             data = json.loads(script.string or script.get_text())
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, RecursionError):
             continue
         for node in json_nodes(data):
             types = node.get("@type", [])
             if types != "Product" and not (isinstance(types, list) and "Product" in types):
                 continue
             products.append(node)
-    expected_id = product_id(target_url)
-    if expected_id:
-        # 页面可能包含推荐商品；有明确商品 ID 时优先匹配，不取第一个推荐价格。
-        matching = [node for node in products if expected_id in (product_id(node.get("url")), product_id(node.get("@id")))]
-        products = matching or [node for node in products if not (product_id(node.get("url")) or product_id(node.get("@id")))]
+    selected_offer = None
+    if target_url is not None:
+        from .page_import import normalize_aliexpress_url
+        try:
+            target = QuoteTarget(target_url, normalize_aliexpress_url, 'sku_id')
+            node, selected_offer = target.select(products)
+            # 字段类型校验失败也返回采集错误，不落入 worker 的内部异常分支。
+            clean_price(selected_offer['price'])
+            clean_currency(selected_offer['priceCurrency'])
+        except (ValidationError, ValueError) as exc:
+            message = ' '.join(exc.messages) if isinstance(exc, ValidationError) else '商品链接无效。'
+            raise CollectionError(message) from exc
+        products = [node]
     if len(products) > 1:
         raise CollectionError("页面包含多个商品，无法确定目标竞品；未保存价格。请记录明确商品的公开数据。")
     for node in products:
-        offers = node.get("offers", {})
+        # 无 target 的旧调用仍可解析匿名夹具；collect 始终传入明确目标。
+        offers = selected_offer if selected_offer is not None else node.get("offers", {})
         offers = offers if isinstance(offers, list) else [offers]
         # 不把区间最低价当作明确成交价，也不从文本猜测销量。
         candidates = []
         for offer in offers:
             if not isinstance(offer, dict) or "price" not in offer or "priceCurrency" not in offer:
                 continue
+            if offer.get('@type') not in (None, 'Offer'):
+                continue
             try:
                 candidates.append((clean_price(offer["price"]), clean_currency(offer["priceCurrency"])))
             except ValidationError:
                 continue
-        if candidates and len(set(candidates)) == 1:
+        if len(candidates) == 1:
             price, currency = candidates[0]
             rating = review_count = None
             aggregate = node.get("aggregateRating", {})
