@@ -569,3 +569,12 @@ AliExpress正常登录但工具站点安全策略明确拒绝，没有换浏览�
 - 官方PyPI项目venv安装gunicorn26.2.0/whitenoise6.12.0，pip check过。20合成专项0.864秒无DB网络，实际deploy check（2有意HSTS政策静默、无其他警告）、146静态收集、本机安全边界和无效登录POST受控对账通过；不重复此前PG331，不写业务fixture。HTTP测试客户端对Secure cookie需在这个本机代理测试显式携带CSRF值，校正测试脚本后正常同源POST200，不是生产cookie异常。
 - 官方cloudflared2026.10.0 AMD64包核官方digest 903845b81828c8cb3c5d13d816a2de71c06a3da5785469df8eb0e1b736d92f9f，项目.local运行，真实help支持allowed-mail；用户明确唯一邮箱身份验证用途，私有0600配置保存，未提交/打印密钥。临时protected URL注册成功，Chrome未认证实际邮箱门禁，已发一次码等待用户自己填，PIN后/公司网络尚未验收，不能称全流程可用。原8000单worker保持，8003 95641/25147/25165，隧道59258/23998/24005，证据与精确URL.local/personal-access-runtime。项目限定caffeinate等待Web PID防空闲，不改系统设置，不承诺合盖/断网可用。
 - 高级80efd754有界官方速卖通数据计划（主4a4f450）逐字审查：仅新ALIEXPRESS_DATA_PLAN.md，已知联盟商品级多价/好评率/近期销量口径限制、旧DS废弃权限不当现能力、接口保存要协调私有来源owner约束；不放松规格guard、无零售页/真实API/OCR成功。用户深度选品与必须攻坚目标继续，下一交付应为真实权限/接口或正常用户主动扩展结果及明确阻断，避免再写空计划。未来用户独立主动图像可辅助校对，但不规避工具拒绝或伪造数据/观测时间。两队本轮冻结停止，最终发布与真实剩余额度按附件/运行记录续接。
+
+
+## 2026-10-09 额度调度纠正与速卖通响应适配
+
+用户纠正28%仍应继续，停止门槛改为五小时/每周较低余量≤5%；AGENTS、TEAM_COORDINATION、PILOT_READINESS与既有shophot heartbeat已经同步，旧1%仅保留历史。负责人确认上一轮两队空闲后重新派给高级high单个有界实现，保留模型与独立clone，常规任务授权不再交用户重复审批。
+
+基线main3919c07b8571fa72579ff82e17846a1ac8445701（PR #12），高级独立.local/aliexpress-affiliate-20261009 / codex/aliexpress-affiliate-preview准确源e5eddf3554cf8ae656f3f54dc11f33e1a2cca9fe，负责人集成e6dde7b。新增官方联盟详情纯响应归一化服务、SimpleTestCase与ALIEXPRESS_AFFILIATE文档；负责人逐字审查当前源并接开发用离线命令及6项回归。唯一商品ID/URL、六类独立金额币种/精确到分、不选最低价当SKU成本、百分好评率与未知销量窗、固定错误文字/秘密抑制和有界结构均明确。所有响应为受控离线测试，未实际API调用，无凭据不声称平台打通；当前已向用户集中询问是否已有获批应用，不索要AppKey/密钥/验证码。官方依据https://jaq-doc.alibaba.com/docs/api.htm?apiId=48595，本轮通用TOP签名资料不被用来猜当前账户网关或权限。
+
+服务24+命令6共30项0.053秒通过，Django check无问题、makemigrations --check --dry-run无变化、diff通过。命令实际受控成功输出offline_fixture/live_api_verified=false/database_written=false，未改UI/路由/模型/网络/共享金额逻辑，不重复旧PG331/Node/截图，不重启现有服务。主8000父21562/单worker21652/web21653，个人8003master25147/child25165，cloudflared24005/父23998与caffeinate25987已重新核存活；远端PIN后和公司网络仍未验收，不因等待重发PIN或重建隧道。较低额度从28%进入实现收尾，下一>5%时顺序接本地保留报价→利润checkpoint测试审查，不直接合入未验证七文件。最终发布PR/合并SHA以本聊天附件/main为准。
