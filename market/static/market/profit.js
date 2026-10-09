@@ -21,6 +21,14 @@
       if (target) target.textContent = label;
     });
   }
+  // Only this module's marked reference errors can replace the profit workspace.
+  document.addEventListener('htmx:beforeSwap', event => {
+    const detail = event.detail;
+    if (detail?.target?.id !== 'profit-workspace' || ![400, 404].includes(detail.xhr?.status)
+        || detail.xhr.getResponseHeader('X-ShopHot-Profit-Workspace-Error') !== '1') return;
+    detail.shouldSwap = true;
+    detail.isError = false;
+  });
   document.addEventListener('DOMContentLoaded', () => updateCurrency(false));
   document.addEventListener('htmx:afterSwap', () => updateCurrency(false));
   document.addEventListener('input', event => {

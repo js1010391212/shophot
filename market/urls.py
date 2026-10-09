@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views, workflow_views, price_history_views, price_monitoring_views, sample_market_views, otto_views, page_import_views, product_review_views
-from . import shipping_views, browser_capture_views
+from . import shipping_views, browser_capture_views, profit_views
 
 urlpatterns = [
     path('browser/capture/download/', browser_capture_views.download, name='browser_capture_download'),
@@ -53,5 +53,5 @@ urlpatterns = [
     path("import/", views.csv_import, name="csv_import"),
     path("export/", views.csv_export, name="csv_export"),
     path("template/", views.csv_template, name="csv_template"),
-    path("tools/profit/", views.profit, name="profit"),
+    path("tools/profit/", profit_views.profit, name="profit"),
 ]
