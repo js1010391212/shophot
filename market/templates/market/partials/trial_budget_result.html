@@ -1,0 +1,10 @@
+<section class="trial-output" aria-label="小批量测品预算">
+<p class="eyebrow">TRIAL BUDGET</p><h2>{{ trial_result.quantity }} 件测品预算</h2>
+<div class="trial-funds"><small>基础准备资金</small><strong>{{ trial_result.prepared }} <span>{{ trial_result.currency }}</span></strong></div>
+<details class="trial-breakdown"><summary>查看准备资金分项</summary><dl class="cost-breakdown">{% for label,value in trial_result.operating %}<dt>{{ label }} × {{ trial_result.quantity }}</dt><dd>{{ value }}</dd>{% endfor %}{% for label,value in trial_result.once %}<dt>{{ label }}（一次性）</dt><dd>{{ value }}</dd>{% endfor %}<dt>额外预留（未支出）</dt><dd>{{ trial_result.reserve }}</dd></dl></details>
+<p class="helptext">货款、物流、广告和其他单件成本按本批数量准备，另加一次性费用及预留。这不是现金流峰值，未模拟账期、库存周转或未填写费用。</p>
+<div class="trial-scenario {% if trial_result.negative %}trial-loss{% endif %}"><h3>假设本批全部售出</h3><p><strong>{{ trial_result.status }}</strong></p><dl class="cost-breakdown"><dt>批次收入</dt><dd>{{ trial_result.revenue }} {{ trial_result.currency }}</dd><dt>销售总成本与费用（含一次性）</dt><dd>{{ trial_result.expenses }}</dd><dt class="total-line">批次净利</dt><dd class="total-line">{{ trial_result.net }} {{ trial_result.currency }}</dd></dl></div>
+<p>销售结算费用合计 <strong>{{ trial_result.settlement }} {{ trial_result.currency }}</strong>，从收入扣除，已计入销售总成本；未重复加入基础准备资金。支付固定费沿单件一件一单假设。</p>
+<p>{% if trial_result.recovery is not None %}摊回一次性费用需售出 <strong>{{ trial_result.recovery }} 件</strong>。{% else %}当前单件无正利润，不能靠增加件数摊回一次性费用。{% endif %}</p>
+<p class="helptext">预留 {{ trial_result.reserve }} {{ trial_result.currency }} 尚未支出，不扣批次净利。回收件数只描述经济性，不预测销量。市场需求、竞品趋势与真实销售结果尚未验证。</p>
+</section>
