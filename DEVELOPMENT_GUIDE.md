@@ -6,6 +6,7 @@
 
 | 模块 | 服务 / 数据 | 页面与交互 | 主要验证 |
 | --- | --- | --- | --- |
+| 速卖通联盟只读响应适配 | `aliexpress_affiliate.py`，不可变请求上下文与六类成对价格；无网络/DB/保存 | 开发用 `preview_aliexpress_affiliate` 离线响应命令，强制测试标签，不是用户JSON导入入口或实站验收 | `test_aliexpress_affiliate.py` / `test_aliexpress_affiliate_command.py`，身份/精度/未知口径/错误正文抑制/有界只读；当前凭据与实际API未接通 |
 | 浏览器观测契约（B1） | `browser_capture.py`，有界JSON接收/账号商品签名预览，复用链接规范化/QuoteTarget/金额校验，不保存 | 纯契约由浏览器主动观测模块复用；实站边界见扩展README | `test_browser_capture.py`：编码/重复键/输入边界、商品规格/签名归属及过期；实站未验收 |
 | 商品页面文件导入 | `page_import.py` / `structured_page.py` / `page_import_forms.py`；复用 Product / Snapshot；`otto.py` 保留链接规范化 | `page_import_views.py` / `page_import{,_start}.html`；首页、失败页、商品报告入口；旧 OTTO URL/表单兼容 | `test_page_import.py` / `test_otto.py`；身份/规格/未知值、签名归属与过期、CSRF、历史保护；真实文件兼容性待验收 |
 | 平台识别与验收 | `platforms.py`；`AnalyzeForm`；只读 `scripts/validate_platform_samples.py` | 首页与现有分析表单明确提示未接入平台 | `test_platforms.py`，真实域名/边界、兼容、不误排队；实站见 CROSS_PLATFORM_VALIDATION.md |
