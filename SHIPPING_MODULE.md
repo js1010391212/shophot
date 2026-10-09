@@ -4,9 +4,9 @@
 
 ## 物流报价来源与范围
 
-- [顺丰官方运费价目表入口](https://www.sf-international.com/cn/sc/support/querySupport/fee_rate)的 2026 中国内地出口公布价格表，第 4 页「国际特惠服务」Parcels 及 3–5 kg 栏。资料查阅 2026-10-08，表格生效 2026-01-20。
-- [对应官方 PDF](https://www.sf-international.com/cms/cms-service/admin/file/get/d47b68236d174adea90e2ba383d072001488926341242949632.pdf)。公开参考目录只摘录 CN 始发至 US / CA / GB / DE / FR / AU / JP / SG 的 0.5–5 kg 包裹档位，CNY、0.5 kg 进位、体积重系数 5000。不得用文件价或 GE+ 栏代替包裹国际特惠价。
-- 这是公布参考价，不是货代协议价或实时承诺。未含燃油、偏远地区、特殊处理、税项和报关等费用，不推断时效、带电货物可收寄性或适用税率。超出目录范围不外推。
+- [顺丰官方运费价目表入口](https://www.sf-international.com/cn/sc/support/querySupport/fee_rate)的 2026 中国内地出口公布价格表，第 4 页「国际特惠服务」Parcels 及 3–19.5 kg 的 Documents & Parcels 栏。资料查阅 2026-10-09，表格生效 2026-01-20。
+- [对应官方 PDF](https://www.sf-international.com/cms/cms-service/admin/file/get/d47b68236d174adea90e2ba383d072001488926341242949632.pdf)。公开参考目录只摘录 CN 始发至 US / CA / GB / DE / FR / AU / JP / SG 的 0.5–19.5 kg 的39个包裹档位，CNY、0.5 kg 进位、体积重系数 5000。不得用文件价或 GE+ 栏代替包裹国际特惠价。
+- 这是公布参考价，不是货代协议价或实时承诺。未含燃油、偏远地区、特殊处理、税项和报关等费用，不推断时效、带电货物可收寄性或适用税率。超出目录范围不外推。20 kg 及以上的每公斤运价和不同进位规则尚未录入，不能用本表续算。
 - [递四方官方线路说明](https://express.4px.com/article/detail/id/500018/cid/27)未给出可直接通用的数值运价，故没有编造其默认报价。自己的货代或海外本地线路通过手动输入或表格保存。
 
 ## 核算口径
@@ -65,3 +65,9 @@
 针对21列样本逐字换行的问题，仅给原表样本添加独立 `shipping-source-samples` 样式及 `shipping-source-scroll` 滚动区域，不改变报价预览表或Python业务逻辑。普通列宽160px、最小112px、最大240px并允许长文本换行，原行号列56px；区域可聚焦并使用方向键滚动，CSS缓存版本更新为4。
 
 同一受控21列错误金额表实际验证：桌面页面1280px，样本区scrollWidth/clientWidth为3416/930px；390px页面保持390px，样本区为3416/312px，方向键右移后scrollLeft=40。原第2行金额错误仍可见，样本列不再逐字排版。修复后的桌面/手机截图为独立克隆 `.local/mapping-closure-20261008/mapping-readable-{desktop,mobile}.jpg`，横向键盘滚动截图为 `mapping-readable-mobile-right.jpg`。旧 `mapping-error-*` 截图保留作修复前证据，不作为当前布局。
+
+## 2026-10-09：顺丰公开参考逐档范围修复
+
+用户实重5 kg、30×30×30 cm的包裹体积重为5.4 kg、进位5.5 kg；旧目录仅录到5 kg而拒绝估价，不是利润账本错误，也不是用户自有表格解析错误。本轮按官方2026价表第4页扩展相同五区和八线路至19.5 kg，前十档金额保留。5.5 kg基础运价为US/CA 930、GB/DE/FR 848、AU 787、JP 507、SG 442，均CNY，燃油和附加费仍需核实填写。
+
+纯数据文件 `market/sf_rates.py` 记录PDF来源、生效日、页码和SHA256 `c3a7a8ea93a91efff6fdd55acc3c90d2ecaf2b0c0df3ffe87a71c9022317ff97`，运行不读取PDF/本地证据或网络。既有公开quote key保持；用户自有报价、燃油/汇率/分摊算法保持。超限提示列明实重、体积重/不适用、进位后计费重与当前录入上限，并建议改选适用报价或手填已核实实际运费；未知价仍拒绝，未补零。专项和最终负责人实测/合并结果见本轮交付记录，源码变更本身不代表真实账单对账已完成。
