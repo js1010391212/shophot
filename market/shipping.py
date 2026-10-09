@@ -7,6 +7,7 @@ import json
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import ShippingRate
+from .sf_rates import SF_ECONOMY_PARCEL_ZONES
 
 D = Decimal
 SF_SOURCE = 'https://www.sf-international.com/cn/sc/support/querySupport/fee_rate'
@@ -67,21 +68,15 @@ class Quote:
 
 
 def public_quotes():
-    # 顺丰官方 2026-01-20 国际特惠，Parcels 栏，0.5–5kg。仅摘录已核对的常用线路，超范围不外推。
-    zones = {
-        2: [150, 180, 209, 239, 269, 298, 326, 356, 384, 413],
-        3: [205, 237, 270, 302, 335, 364, 393, 422, 451, 478],
-        4: [232, 291, 349, 408, 467, 519, 573, 626, 680, 733],
-        6: [299, 372, 433, 495, 558, 620, 682, 744, 806, 868],
-        7: [309, 363, 418, 471, 525, 578, 633, 685, 738, 792],
-    }
+    # Page 4 explicit parcel bands; >=20kg changes tariff and is not extrapolated.
+    zones = SF_ECONOMY_PARCEL_ZONES
     routes = [('US', 6), ('GB', 7), ('DE', 7), ('FR', 7), ('CA', 6), ('AU', 4), ('JP', 3), ('SG', 2)]
     return [Quote(
         key=f'public:sf-economy-{country}', name='顺丰国际特惠 · 包裹', carrier='顺丰国际',
         origin='CN', destination=country, currency='CNY', method='table', min_weight=D('.5'),
-        max_weight=D('5'), step_weight=D('.5'), fixed_fee=D('0'), volume_divisor=5000,
-        effective_from=date(2026, 1, 20), source_url=SF_SOURCE, checked_at='2026-10-08',
-        notes='中国内地出口寄付包裹公布价，非货代协议价。基础运费未含燃油、偏远地区、特殊处理、税项及报关等费用；实际收寄条件与结算以承运商为准。当前仅提供 0.5–5 kg 范围。',
+        max_weight=D('19.5'), step_weight=D('.5'), fixed_fee=D('0'), volume_divisor=5000,
+        effective_from=date(2026, 1, 20), source_url=SF_SOURCE, checked_at='2026-10-09',
+        notes='中国内地出口寄付包裹公布价，非货代协议价。基础运费未含燃油、偏远地区、特殊处理、税项及报关等费用；实际收寄条件与结算以承运商为准。当前录入 0.5–19.5 kg 的逐档包裹价；20 kg 及以上改用每公斤运价及不同进位规则，尚未录入，不能外推。',
         table={D(i + 1) / 2: D(price) for i, price in enumerate(zones[zone])}) for country, zone in routes]
 
 
@@ -125,7 +120,12 @@ def estimate(quote, *, weight, length=None, width=None, height=None, fuel_rate, 
     else:
         billed = (raw_weight / quote.step_weight).to_integral_value(rounding=ROUND_CEILING) * quote.step_weight
     if billed > quote.max_weight:
-        raise ValidationError(f'计费重量 {billed.normalize()} kg 超过报价上限 {quote.max_weight.normalize()} kg，不能外推价格。')
+        volume_text = f'{format(volume_weight, "f")} kg' if volume_weight is not None else '不适用（该报价不计体积重）'
+        raise ValidationError(
+            f'实重 {format(weight, "f")} kg，体积重 {volume_text}，进位后计费重 {format(billed, "f")} kg；'
+            f'超过当前录入报价上限 {format(quote.max_weight, "f")} kg，无法估价，不能外推价格。'
+            '请改选覆盖该计费重量的适用报价，或核实后手填实际单件运费。'
+        )
     if quote.method == 'table':
         if billed not in quote.table:
             raise ValidationError('报价表没有该计费重量，不能估价。')

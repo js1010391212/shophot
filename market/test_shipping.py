@@ -147,7 +147,7 @@ class ShippingCalculationTests(TestCase):
                 result = self.calc(quotes[country], weight=D(weight), currency='CNY')
                 self.assertEqual(result['freight'], D(expected))
         with self.assertRaises(ValidationError):
-            self.calc(quotes['US'], weight=D('5.001'))
+            self.calc(quotes['US'], weight=D('19.501'))
 
     def test_expired_or_not_yet_effective_quote_cannot_calculate(self):
         for quote in [replace(self.quote, effective_until=timezone.localdate() - timedelta(days=1)),
@@ -325,7 +325,7 @@ class ShippingWorkflowTests(TestCase):
         self.assertEqual(ShippingRate.objects.count(), 0)
         self.assertIsNone(response.context['result'])
         data = dict(self.estimate_data, shipping_mode='quote', sale_currency='CNY', selling_price='1000', cost='100', fee_rate='0')
-        response = self.client.post(reverse('profit'), dict(data, package_weight='5.001'))
+        response = self.client.post(reverse('profit'), dict(data, package_weight='19.501'))
         self.assertIsNone(response.context['result'])
         self.assertContains(response, '不能外推价格')
 
