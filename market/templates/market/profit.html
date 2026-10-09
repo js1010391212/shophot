@@ -3,7 +3,7 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'market/shipping.css' %}?v=2"><link rel="stylesheet" href="{% static 'market/profit_references.css' %}?v=1">
 <link rel="stylesheet" href="{% static 'market/trial_budget.css' %}?v=1">
-<div class="heading"><div><p class="eyebrow">UNIT ECONOMICS</p><h1>单件利润工作台</h1><p class="muted">把售价、履约和获客成本放在一起，算清一单能留下多少。</p></div><a href="{% url 'profit' %}" class="button secondary">重置场景</a></div>
+<div class="heading"><div><p class="eyebrow">UNIT ECONOMICS</p><h1>利润与测品预算</h1><p class="muted">算清单件利润，也核对小批量测品需要准备的资金。</p></div><a href="{% url 'profit' %}" class="button secondary">重置场景</a></div>
 <div id="profit-workspace" class="profit-layout">
 {% if quote_reference %}<section class="notice profit-reference" aria-label="测算报价来源"><h2>本次参考报价</h2><p>{{ quote_reference.data.title|default:quote_reference.product.title }} · <strong>{{ quote_reference.snapshot.price }} {{ quote_reference.snapshot.currency }}</strong></p><p>观测时间：{{ quote_reference.snapshot.observed_at|timezone:'Asia/Shanghai'|date:'Y-m-d H:i' }}（北京时间） · 来源：{{ quote_reference.snapshot.get_source_display }}</p>
 {% if quote_reference.kind == 'observation' %}<p>规格编号：{{ quote_reference.data.sku_id|default_if_none:'未知'|default:'未知' }} · 收货国家：{{ quote_reference.data.market_country|default_if_none:'未知'|default:'未知' }}</p><ul>{% for condition in quote_reference.data.conditions %}<li>{{ condition }}</li>{% empty %}<li>报价条件未知</li>{% endfor %}</ul><a href="{% url 'browser_report' quote_reference.product.pk %}">返回我的报价记录 →</a>{% else %}<a href="{% url 'product_detail' quote_reference.product.pk %}">返回公共商品报告 →</a>{% endif %}
