@@ -1,8 +1,9 @@
 from django.urls import path
 from . import views, workflow_views, price_history_views, price_monitoring_views, sample_market_views, otto_views, page_import_views, product_review_views
-from . import shipping_views, browser_capture_views, profit_views
+from . import shipping_views, browser_capture_views, profit_views, browser_quote_library_views
 
 urlpatterns = [
+    path('browser/quotes/', browser_quote_library_views.library, name='browser_quote_library'),
     path('browser/capture/download/', browser_capture_views.download, name='browser_capture_download'),
     path('browser/capture/', browser_capture_views.preview, name='browser_capture'),
     path('products/<int:pk>/browser/confirm/', browser_capture_views.confirm, name='browser_capture_confirm'),

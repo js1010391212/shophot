@@ -1,0 +1,24 @@
+{% extends 'market/base.html' %}{% load static tz %}
+{% block title %}全部报价记录 · ShopHot{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'market/browser_quote_library.css' %}?v=1">
+<div class="quote-library"><a href="{% url 'dashboard' %}">← 返回首页</a>
+<div class="heading"><div><p class="eyebrow">仅当前账号可见</p><h1>全部报价记录</h1><p class="muted">查找保存过的报价，再查看商品记录或测算利润。</p></div></div>
+<form class="card quote-library-filters" method="get" action="{% url 'browser_quote_library' %}">
+<div class="quote-filter-grid">{% for field in form %}<div>{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}</div>
+<div class="actions"><button type="submit">筛选报价</button><a href="{% url 'browser_quote_library' %}">清除筛选</a></div>
+{% if form.errors %}<p class="notice error" role="alert">筛选条件无效，请检查上方提示。本次不显示报价。{{ form.non_field_errors }}</p>{% endif %}</form>
+<p class="muted">不同币种、规格、国家与条件分别保留。未知条件不补全，不据此推断价格可比较。</p>
+{% if page.object_list %}<p class="quote-library-count">找到 {{ page.paginator.count }} 条报价 · 按观测时间从新到旧展示</p>
+<div class="quote-library-list">{% for row in page %}<article class="card quote-library-row">
+<div class="quote-row-top"><div><span class="badge">{{ row.product.platform }}</span><h2>{{ row.capture_data.title|default:row.product.title }}</h2></div><p class="quote-library-price">{{ row.price }} <span>{{ row.currency }}</span></p></div>
+<p class="muted"><time datetime="{{ row.observed_at|date:'c' }}">{{ row.observed_at|timezone:'Asia/Shanghai'|date:'Y-m-d H:i' }}</time> · 北京时间 · {{ row.get_source_display }}</p>
+<p>规格编号：{{ row.capture_data.sku_id|default_if_none:'未知'|default:'未知' }} · 收货国家：{{ row.capture_data.market_country|default_if_none:'未知'|default:'未知' }}</p>
+<ul>{% for condition in row.capture_data.conditions %}<li>{{ condition }}</li>{% empty %}<li>报价条件未知</li>{% endfor %}</ul>
+<div class="actions"><a href="{% url 'browser_report' row.product_id %}">查看这件商品的报价记录 →</a><a class="button secondary" href="{% url 'profit' %}?observation={{ row.pk }}">用这条报价测算利润</a></div>
+</article>{% endfor %}</div>
+{% if page.paginator.num_pages > 1 %}<nav class="pagination" aria-label="报价分页">第 {{ page.number }} / {{ page.paginator.num_pages }} 页{% if page.has_previous %}<a href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ page.previous_page_number }}">上一页</a>{% endif %}{% if page.has_next %}<a href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ page.next_page_number }}">下一页</a>{% endif %}</nav>{% endif %}
+{% elif form.errors %}<section class="card empty"><h2>请先修正筛选条件</h2><p>无效条件不会自动改为查看全部。也可以清除筛选后重新查找。</p></section>
+{% elif has_quotes %}<section class="card empty"><h2>没有符合条件的报价</h2><p>可以缩短标题关键词，或清除平台与币种筛选。</p><a class="button secondary" href="{% url 'browser_quote_library' %}">清除筛选</a></section>
+{% else %}<section class="card empty"><h2>还没有保存报价</h2><p>在正常商品页点击扩展采集，核对预览并确认保存后，报价会出现在这里。</p><a class="button secondary" href="{% url 'browser_capture' %}">安装采集扩展</a></section>{% endif %}
+</div>{% endblock %}
