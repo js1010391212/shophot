@@ -1,0 +1,11 @@
+<fieldset class="trial-inputs"><legend><span>05</span> 小批量测品 <small data-cost-currency></small></legend>
+<label class="trial-toggle" for="id_trial_enabled">{{ form.trial_enabled }} {{ form.trial_enabled.label }}</label>{{ form.trial_enabled.errors }}
+<p class="helptext">先算清单件，再选择本批数量和一次性费用。预算基于你填写的假设，不预测销量。</p>
+<details id="trial-budget-details" {% if form.trial_active %}open{% endif %}><summary>数量、一次性费用与预留</summary>
+<div class="field-grid trial-fields">
+<div>{{ form.trial_quantity.label_tag }}{{ form.trial_quantity }}{{ form.trial_quantity.errors }}</div>
+<div>{{ form.trial_sample_cost.label_tag }}{{ form.trial_sample_cost }}{{ form.trial_sample_cost.errors }}</div>
+<div>{{ form.trial_setup_cost.label_tag }}{{ form.trial_setup_cost }}{{ form.trial_setup_cost.errors }}</div>
+<div>{{ form.trial_compliance_cost.label_tag }}{{ form.trial_compliance_cost }}{{ form.trial_compliance_cost.errors }}</div>
+<div>{{ form.trial_reserve_cost.label_tag }}{{ form.trial_reserve_cost }}{{ form.trial_reserve_cost.errors }}</div>
+</div><p class="helptext">金额均使用成本与结果币种；没有费用请明确填 0。单件广告、其他成本和支付费用也须填写，不把未知费用当 0。一次性费用不要重复计入单件成本。预留尚未花掉时不计入利润，实际支出后需回填费用重算。</p></details></fieldset>
