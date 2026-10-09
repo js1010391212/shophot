@@ -151,26 +151,10 @@ def csv_template(request):
     return response
 
 
-@login_required
 def profit(request):
-    from .profit import calculate_profit
-    from .shipping_forms import LogisticsProfitForm, ShippingEstimateForm
-    initial = {}
-    reference = None
-    if request.method == 'GET' and request.GET.get('product', '').isdigit():
-        reference = get_object_or_404(Product, pk=request.GET['product'])
-        snapshot = reference.snapshots.first()
-        if snapshot:
-            initial = {'selling_price': snapshot.price, 'sale_currency': snapshot.currency}
-        else:
-            reference = None
-    if request.method == 'GET' and request.GET.get('shipping_mode') == 'quote':
-        initial.update({name: request.GET[name] for name in ShippingEstimateForm.base_fields if name in request.GET})
-        initial['shipping_mode'] = 'quote'
-    form = LogisticsProfitForm(request.POST if request.method == "POST" else None, initial=initial, user=request.user)
-    result = calculate_profit(form.cleaned_data) if request.method == "POST" and form.is_valid() else None
-    return render(request, "market/profit.html", {"form": form, "result": result, "reference": reference,
-        "shipping_result": form.shipping_estimate, "quote_metadata": {key: q.metadata() for key, q in form.shipping_form.quotes.items()}})
+    """Compatibility entry point; the modular view owns authentication and workflow."""
+    from .profit_views import profit as profit_workspace
+    return profit_workspace(request)
 
 
 @login_required
