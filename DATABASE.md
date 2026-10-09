@@ -23,3 +23,6 @@
 首次切换时暂停网页/worker 后，运行 `.venv/bin/python scripts/migrate_to_postgres.py`：分别导出 SQLite 和导入后的 PostgreSQL 数据，逐项校验。目标业务表非空则停止，防止重复导入覆盖。恢复旧库可设置 `SHOPHOT_DB_ENGINE=sqlite`；新库配置与原库都保留。
 
 本机执行结果：PostgreSQL 17.11 已初始化并运行于 127.0.0.1:55432，数据逐项迁移校验一致。78 项测试在 PostgreSQL 上通过；浏览器原登录会话和两家目录页面正常。原 SQLite 库及受限权限导出保留。
+
+
+现有本机PostgreSQL的在线私有备份与隔离恢复检查使用`scripts/backup_database.py`，运行条件与实际演练见[DATABASE_BACKUP.md](DATABASE_BACKUP.md)。归档含账号和会话等敏感数据，仅保留在Git忽略且权限受限的.local/backups；该命令不接受恢复目标或覆盖原业务库。

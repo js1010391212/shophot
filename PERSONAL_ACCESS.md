@@ -26,6 +26,8 @@
 
 脚本验证配置与依赖→Django deploy check→collectstatic到独立 `.local/personal-static`→启动前台固定8003 WSGI。不会写业务记录、迁移、备份或启动worker；静态收集仅写项目静态目录。Gunicorn环境命令覆盖清空，固定配置不读取默认同名配置，日志关闭访问URL记录。错误只报告配置字段或一般原因，不回显值。
 
+本机 macOS 已实际出现 Gunicorn 收到 HUP 后，子进程在请求时因 Objective-C fork 安全检查退出。更新个人网页时，先核实并正常终止本次8003的旧 master、确认端口释放，再用上面的启动脚本完整重启；不要用 HUP 更新此运行环境，也不要关闭系统 fork 安全检查。保留已认证保护的原隧道和8000单 worker，重启后重新核验静态资源、登录、CSRF及Host/proto门禁；若使用仅等待旧 master 的项目防休眠进程，按新 master 重新设置该项目进程。
+
 ## 代理边界和验证
 
 - 只在本机8003接收代理，独立WSGI边界在Django和静态资源前校验REMOTE_ADDR为127.0.0.1/::1、Host精确匹配、X-Forwarded-Proto精确https；其它请求403，不能通过伪造外网proto绕过。直接启动 `config.wsgi` 或 `manage.py runserver` 不能代替这个受保护入口。
