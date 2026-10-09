@@ -561,3 +561,11 @@ AliExpress正常登录但工具站点安全策略明确拒绝，没有换浏览�
 - Chrome桌面实际5kg30cube成功930CNY、超范围19.501→20拒绝并纠正5成功；隔离同源iframe实际390px成功、clientWidth=scrollWidth=390，非整浏览器设备仿真。主8000安装相同源码真实成功，无控制台error/warn。其余受控输入60USD减10%汇率7采购40CNY广告2CNY净-594；不是用户提供的真实成本或承运商最终合同价。真实截图/数据校验在.local/sf-profit-20261009；QA测试账号/DB/cookie及同源框架均在隔离clone.local，主安全配置保持，业务库无测试报价/观测写入。
 - 主旧89345停止并确认6396/6471/6472消失，新57089父21562/worker21652/web21653，8000单worker，0012无新迁移；QA53592/8002/20712已停。两队本轮完成停，原clone/证据保留。最近真实五小时55%/每周35%，min35%；最终发布PR/合并SHA以附件/main读取。
 - 用户提出Shopify级别数据深度后明确目标深度选品；速卖通下一P0，真实商品/规格价格→观测历史/评价变化→物流利润候选比较/潜力判断。来源/时间/条件及推估假设必须明确，未知销量不编造；Ali工具策略不能绕过，实际安装点击未验证不能宣称完成。官方Shopify对比及取舍写COMPETITOR_REVIEW/PILOT_READINESS，不提前店铺订单后台/收费部署。
+
+
+## 2026-10-09：本人公司浏览器访问准备与数据攻坚入口
+
+- 用户急需公司仅浏览器访问；本地冻结9cdcdf7八新增文件，负责人ef53594集成、57819af保留本机数据库连接默认，原settings/production/requirements/业务逻辑无改。独立fail-closed精确origin/私有配置、DEBUGFalse/安全隔离cookie、同源CSRF、应用/WhiteNoise前loopback+Host+https gate，固定8003一个Web不worker/迁移。
+- 官方PyPI项目venv安装gunicorn26.2.0/whitenoise6.12.0，pip check过。20合成专项0.864秒无DB网络，实际deploy check（2有意HSTS政策静默、无其他警告）、146静态收集、本机安全边界和无效登录POST受控对账通过；不重复此前PG331，不写业务fixture。HTTP测试客户端对Secure cookie需在这个本机代理测试显式携带CSRF值，校正测试脚本后正常同源POST200，不是生产cookie异常。
+- 官方cloudflared2026.10.0 AMD64包核官方digest 903845b81828c8cb3c5d13d816a2de71c06a3da5785469df8eb0e1b736d92f9f，项目.local运行，真实help支持allowed-mail；用户明确唯一邮箱身份验证用途，私有0600配置保存，未提交/打印密钥。临时protected URL注册成功，Chrome未认证实际邮箱门禁，已发一次码等待用户自己填，PIN后/公司网络尚未验收，不能称全流程可用。原8000单worker保持，8003 95641/25147/25165，隧道59258/23998/24005，证据与精确URL.local/personal-access-runtime。项目限定caffeinate等待Web PID防空闲，不改系统设置，不承诺合盖/断网可用。
+- 高级80efd754有界官方速卖通数据计划（主4a4f450）逐字审查：仅新ALIEXPRESS_DATA_PLAN.md，已知联盟商品级多价/好评率/近期销量口径限制、旧DS废弃权限不当现能力、接口保存要协调私有来源owner约束；不放松规格guard、无零售页/真实API/OCR成功。用户深度选品与必须攻坚目标继续，下一交付应为真实权限/接口或正常用户主动扩展结果及明确阻断，避免再写空计划。未来用户独立主动图像可辅助校对，但不规避工具拒绝或伪造数据/观测时间。两队本轮冻结停止，最终发布与真实剩余额度按附件/运行记录续接。

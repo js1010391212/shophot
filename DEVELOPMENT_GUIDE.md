@@ -63,3 +63,8 @@ git diff --check
 本轮仅kg与明确币种的平面报价：2MB、100行、40列，样本和宽表内部横向滚动；复杂矩阵、多工作表选择、单位/汇率推断、公式或AI识别均未接入。扩大格式前应先取得真实货代样本并协调负责人，不松开ZIP/XML/公式/合并/未知字段边界。专项使用独立测试库，失败/空状态须实际浏览器留证，预览和失败不写库；最终全套和主服务统一由负责人执行。详细口径、数据上限和当前证据见 `SHIPPING_MODULE.md`。
 
 原表样本宽表使用独立 `shipping-source-samples` / `shipping-source-scroll` 样式，普通列保持可读最小宽度、行号更窄、长文本限制宽度后换行，溢出只在 `.table-wrap` 内部滚动。不要让继承的任意位置换行把几十列压成逐字表头；实际浏览器同时检查样本区scrollWidth大于clientWidth、整页scrollWidth等于视口，并保留错误提示。改CSS时同步导入页面版本参数。
+
+
+## 个人远程浏览器入口
+
+独立运行边界见PERSONAL_ACCESS.md：config.personal_access/personal_runtime/personal_wsgi，scripts.start_personal与personal_gunicorn，requirements-personal额外依赖。只供个人HTTPS代理+邮箱门禁试用，原8000及单worker保持；测试config.test_personal_access，原config.production策略不降低。真实远端登录与公司网络仍需验收，项目私有配置/邮箱/URL/PID在.local，不提交。平台数据攻坚的官方字段/限制与下一入口见ALIEXPRESS_DATA_PLAN.md，文档和离线测试不等于实站支持。

@@ -1,0 +1,4 @@
+# Optional isolated personal web runtime. Base project requirements remain required.
+# Official PyPI checked 2026-10-09; both support Python >=3.10.
+gunicorn==26.2.0
+whitenoise==6.12.0
