@@ -68,6 +68,10 @@ git diff --check
 原表样本宽表使用独立 `shipping-source-samples` / `shipping-source-scroll` 样式，普通列保持可读最小宽度、行号更窄、长文本限制宽度后换行，溢出只在 `.table-wrap` 内部滚动。不要让继承的任意位置换行把几十列压成逐字表头；实际浏览器同时检查样本区scrollWidth大于clientWidth、整页scrollWidth等于视口，并保留错误提示。改CSS时同步导入页面版本参数。
 
 
+## 本机数据备份
+
+维护模块config.database_backup与无连接参数的scripts/backup_database.py独立于Web/业务服务。读取固定项目私有本机PG配置，源只读快照→私有custom归档→随机新隔离库恢复→逐表数量/指纹比对→仅清理确定创建的验证库；模拟边界回归config.test_database_backup。真实演练收据仅.local，范围与限制见DATABASE_BACKUP.md，不新增定时器或覆盖恢复入口。
+
 ## 个人远程浏览器入口
 
 独立运行边界见PERSONAL_ACCESS.md：config.personal_access/personal_runtime/personal_wsgi，scripts.start_personal与personal_gunicorn，requirements-personal额外依赖。只供个人HTTPS代理+邮箱门禁试用，原8000及单worker保持；测试config.test_personal_access，原config.production策略不降低。真实远端登录与公司网络仍需验收，项目私有配置/邮箱/URL/PID在.local，不提交。平台数据攻坚的官方字段/限制与下一入口见ALIEXPRESS_DATA_PLAN.md，文档和离线测试不等于实站支持。
