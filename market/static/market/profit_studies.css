@@ -1,0 +1,6 @@
+.profit-study-save { border-top: 1px solid #dce2eb; margin-top: 1.5rem; padding-top: 1rem; }
+.profit-study-save form { display: grid; gap: .8rem; }
+.study-list { display: grid; gap: 1rem; margin: 1rem 0; }
+.study-detail { overflow-wrap: anywhere; }
+.study-inputs { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,220px),1fr)); gap: .5rem; }
+.study-detail form { margin-top: 1rem; }

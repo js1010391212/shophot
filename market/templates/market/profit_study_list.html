@@ -1,0 +1,6 @@
+{% extends 'market/base.html' %}{% load static tz %}{% block title %}我的测算记录 · ShopHot{% endblock %}{% block content %}
+<link rel="stylesheet" href="{% static 'market/profit_studies.css' %}?v=1"><div class="heading"><h1>我的测算记录</h1><a href="{% url 'profit' %}">建立新测算 →</a></div>
+<form method="get" class="card">{{ form.as_p }}<button>筛选记录</button></form>{% if form.errors %}<p class="notice error" role="alert">筛选条件无效。</p>{% endif %}
+<div class="study-list">{% for row in page %}<article class="card"><h2><a href="{% url 'profit_study_detail' row.pk %}">{{ row.name }}</a></h2><p>{{ row.created_at|timezone:'Asia/Shanghai'|date:'Y-m-d H:i' }} · {% if row.active %}研究中{% else %}已移出{% endif %}</p><p>{{ row.notes|truncatechars:150 }}</p></article>{% empty %}<div class="empty"><h2>暂无匹配的测算记录</h2><p>先计算情景并保存，或调整筛选条件。</p></div>{% endfor %}</div>
+{% if page.has_previous %}<a href="?{{ filter_query }}&amp;page={{ page.previous_page_number }}">上一页</a>{% endif %}<span>第 {{ page.number }} / {{ page.paginator.num_pages }} 页</span>{% if page.has_next %}<a href="?{{ filter_query }}&amp;page={{ page.next_page_number }}">下一页</a>{% endif %}
+{% endblock %}

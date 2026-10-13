@@ -1,8 +1,13 @@
 from django.urls import path
 from . import views, workflow_views, price_history_views, price_monitoring_views, sample_market_views, otto_views, page_import_views, product_review_views
+from . import profit_study_views
 from . import shipping_views, browser_capture_views, profit_views, browser_quote_library_views
 
 urlpatterns = [
+    path('tools/profit/studies/', profit_study_views.library, name='profit_study_list'),
+    path('tools/profit/studies/save/', profit_study_views.save, name='profit_study_save'),
+    path('tools/profit/studies/<int:pk>/', profit_study_views.detail, name='profit_study_detail'),
+    path('tools/profit/studies/<int:pk>/active/', profit_study_views.toggle, name='profit_study_toggle'),
     path('browser/quotes/', browser_quote_library_views.library, name='browser_quote_library'),
     path('browser/capture/download/', browser_capture_views.download, name='browser_capture_download'),
     path('browser/capture/', browser_capture_views.preview, name='browser_capture'),

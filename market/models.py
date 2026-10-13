@@ -230,3 +230,19 @@ class ProductReviewBatch(models.Model):
 
     class Meta:
         ordering = ['-snapshot__observed_at', '-pk']
+
+
+class ProfitStudyRecord(models.Model):
+    """Owner-private immutable calculation snapshot; only active may change."""
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    nonce = models.UUIDField()
+    request_fingerprint = models.CharField(max_length=64)
+    name = models.CharField(max_length=120)
+    notes = models.TextField(blank=True, max_length=1000)
+    snapshot = models.JSONField()
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        constraints = [models.UniqueConstraint(fields=['owner', 'nonce'], name='one_profit_study_nonce_per_owner')]

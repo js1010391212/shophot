@@ -1,0 +1,2 @@
+<div class="profit-study-save"><h3>保留这次研究</h3><p class="helptext">保存的是最后一次成功计算的情景。之后修改输入须先重新计算再保存；不会把旧结果当作修改后的输入。</p>
+<p id="profit-study-save-stale" class="notice warning" hidden>输入已修改，须重新计算后保存。</p><form method="post" action="{% url 'profit_study_save' %}">{% csrf_token %}<fieldset id="profit-study-save-fields">{{ save_form.state }}<div>{{ save_form.name.label_tag }}{{ save_form.name }}{{ save_form.name.errors }}</div><div>{{ save_form.notes.label_tag }}{{ save_form.notes }}{{ save_form.notes.errors }}</div><button type="submit">保存最后成功计算</button></fieldset></form></div>
