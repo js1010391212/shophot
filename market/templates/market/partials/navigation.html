@@ -1,5 +1,6 @@
 <nav id="workspace-navigation" aria-label="主导航">
 <p class="nav-group-label">研究工作区</p>
+<a {% if request.resolver_match.url_name == 'first_use' %}aria-current="page"{% endif %} href="{% url 'first_use' %}"><span aria-hidden="true">?</span>使用指引</a>
 <a {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'store_analysis' or request.resolver_match.url_name == 'product_analysis' %}aria-current="page"{% endif %} href="{% url 'dashboard' %}"><span aria-hidden="true">⌂</span>分析首页</a>
 <a {% if request.resolver_match.url_name == 'stores' or request.resolver_match.url_name == 'store_research' %}aria-current="page"{% endif %} href="{% url 'stores' %}"><span aria-hidden="true">▦</span>店铺研究</a>
 <a {% if request.resolver_match.url_name == 'sample_market' or request.resolver_match.url_name == 'catalog_market' or request.resolver_match.url_name == 'catalog_compare' or request.resolver_match.url_name == 'catalog_detail' or request.resolver_match.url_name == 'catalog_history' %}aria-current="page"{% endif %} href="{% url 'catalog_market' %}"><span aria-hidden="true">▤</span>商品研究</a>

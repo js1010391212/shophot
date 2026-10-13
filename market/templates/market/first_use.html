@@ -1,0 +1,19 @@
+{% extends 'market/base.html' %}{% load static %}
+{% block title %}使用指引 · ShopHot{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'market/first_use.css' %}?v=1">
+<div class="heading"><div><p class="eyebrow">从一条报价开始</p><h1>使用指引</h1><p class="muted">先核对商品和报价，再算实际成本，最后保留自己的研究过程。</p></div></div>
+<section class="card first-use-start" aria-label="开始研究"><h2>先打开自己的报价</h2><p>从已保存报价进入对应报告，再点击利润测算。这样商品、币种和来源会留在同一条研究路径里。</p><div class="first-use-actions"><a class="button" href="{% url 'browser_quote_library' %}">从我的报价开始 →</a><a class="button secondary" href="{% url 'profit' %}">没有报价，先手填情景</a></div><p class="helptext">手填售价与成本是假设，不代表已采集到平台数据。</p></section>
+<ol class="first-use-steps" aria-label="报价到研究记录的步骤">
+<li class="card"><h2>核对这件商品的报价</h2><p>打开报告，检查价格和币种、商品规格、收货国家、优惠及税运条件、来源与观测时间。历史报价不一定是当前价格；未知内容保留未知，不能当作 0 或“没有”。</p><p>还没有报价时，可先查看<a href="{% url 'browser_capture' %}">浏览器采集安装与预览说明</a>。只有预览信息核对正确后才确认保存，适用范围见下方。</p></li>
+<li class="card"><h2>算清采购、物流与费用</h2><p>在报告内进入利润测算，填写实际采购成本、包装和履约运费、广告及其它费用、平台与支付费率。售价与成本币种不同须填写实际换算汇率；引用报价只是售价假设，不会变成采购成本。</p><p>物流可手填，也可使用<a href="{% url 'shipping' %}">物流报价</a>，或<a href="{% url 'shipping_import' %}">导入自己的物流表格</a>。公开参考不等于你的合同价，核对日期、路线、重量和附加费用，已计入的费用不要重复填写。</p></li>
+<li class="card"><h2>按需查看判断与测品预算</h2><p>利润页可启用成本视角选品判断和小批量测品预算。各项费用须明确填写；确认没有的费用填 0；成本未核对不能判为达标。预算区分准备资金、销售结算费用和假设全部售出的批次净利，未支出的预留资金不扣利润。</p><p>这些结果只解释当前成本情景，不预测需求或销量，也不保证实际盈利。输入修改后须重新计算，错误时不能继续使用旧结果。</p></li>
+<li class="card"><h2>保存并继续研究</h2><p>计算成功后填写名称和备注，点击“保存最后成功计算”。在<a href="{% url 'profit_study_list' %}">我的测算记录</a>查看当时来源、假设与结果，也可继续测算、移出或恢复。</p><p>历史记录不会被以后报价变化覆盖；继续测算需再次核对当前来源与物流。来源失效或条件改变时，按提示重选并重算。</p></li>
+</ol>
+<section class="card first-use-support"><h2>目前哪些报价流程已验证？</h2>
+<dl><dt>eBay</dt><dd>0.1.1 仅一个刊登完成了安装点击 → 预览 → 确认 → 私有报告的实际验证。安装页可下载 0.1.2 测试包；可下载不等于实站验证，升级、第二件商品与多规格尚未验收，不能据此认为所有 eBay 商品可用。</dd>
+<dt>AliExpress / 速卖通</dt><dd>当前尚未完成实时采集验收，官方应用准确 API 能力尚未确认。离线解析和联盟响应测试不代表实时采集成功，也不代表取得选中规格的价格。</dd>
+<dt>手动观测与文件</dt><dd>可使用<a href="{% url 'csv_import' %}">CSV 导入</a>或已有商品的手动观测入口记录真实看到的数据，仍须提供来源、观测时间与报价条件。文件解析是否适配实际页面须单独核对，缺失销量或评价不能补成 0。</dd></dl>
+</section>
+<section class="card"><h2>账号与问题反馈</h2><p>我的浏览器报价与测算记录按账号私有保存；公共商品及非浏览器快照仍为共享研究资料。使用负责人提供的普通账号。需要创建或重置账号、遇到无法解释的报价或核算问题时，请联系负责人；不要把密码发到研究备注里。</p><a href="{% url 'dashboard' %}">返回分析首页 →</a></section>
+{% endblock %}
