@@ -1,0 +1,9 @@
+<section class="selection-assessment-result" aria-label="成本视角选品判断结果" data-assessment-status="{{ assessment_result.status }}">
+<h2>{{ assessment_result.title }}</h2>
+<p>依据：单件净利 {{ assessment_result.net }} {{ assessment_result.currency }}，收入 {{ assessment_result.revenue }} {{ assessment_result.currency }}，目标利润率 {{ assessment_result.target }}%。按金额核对目标：净利 ≥ 收入 × 目标利润率；百分比按两位小数显示，临界结果以金额比较为准。</p>
+<ul>{% for reason in assessment_result.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+{% if assessment_result.trial %}<p>本批 {{ assessment_result.trial.quantity }} 件，原预算净利 {{ assessment_result.trial.net }} {{ assessment_result.currency }}；{% if assessment_result.trial.recovery is not None %}摊回一次性费用需 {{ assessment_result.trial.recovery }} 件。{% else %}单件净利不为正，不提供盈利回收件数。{% endif %}</p>{% endif %}
+<p>{{ assessment_result.source_note }}</p>
+{% if assessment_result.unknowns %}<h3>报价待核对项</h3><ul>{% for item in assessment_result.unknowns %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
+<p class="notice warning">只依据用户当前成本情景，不代表竞品真实利润，不预测销量或需求，不保证实际盈利。需求与竞争证据尚未纳入判断；报价不会自动作为采购成本。</p>
+</section>

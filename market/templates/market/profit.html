@@ -2,7 +2,7 @@
 {% block title %}利润工具 · ShopHot{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'market/shipping.css' %}?v=2"><link rel="stylesheet" href="{% static 'market/profit_references.css' %}?v=1">
-<link rel="stylesheet" href="{% static 'market/trial_budget.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'market/trial_budget.css' %}?v=1"><link rel="stylesheet" href="{% static 'market/selection_assessment.css' %}?v=1">
 <div class="heading"><div><p class="eyebrow">UNIT ECONOMICS</p><h1>利润与测品预算</h1><p class="muted">算清单件利润，也核对小批量测品需要准备的资金。</p></div><a href="{% url 'profit' %}" class="button secondary">重置场景</a></div>
 <div id="profit-workspace" class="profit-layout">
 {% if quote_reference %}<section class="notice profit-reference" aria-label="测算报价来源"><h2>本次参考报价</h2><p>{{ quote_reference.data.title|default:quote_reference.product.title }} · <strong>{{ quote_reference.snapshot.price }} {{ quote_reference.snapshot.currency }}</strong></p><p>观测时间：{{ quote_reference.snapshot.observed_at|timezone:'Asia/Shanghai'|date:'Y-m-d H:i' }}（北京时间） · 来源：{{ quote_reference.snapshot.get_source_display }}</p>
@@ -17,12 +17,14 @@
 <fieldset><legend><span>03</span> 物流成本</legend>{{ form.shipping_mode.label_tag }}{{ form.shipping_mode }}{{ form.shipping_mode.errors }}<div data-shipping-manual>{{ form.shipping.label_tag }}{{ form.shipping }}{{ form.shipping.errors }}</div><div data-shipping-panel>{% include 'market/partials/shipping_inputs.html' %}</div><a class="shipping-inline-link" href="{% url 'shipping' %}">管理物流报价 / 导入 Excel 或 CSV</a></fieldset>
 <fieldset><legend><span>04</span> 平台与支付费用</legend><div class="field-grid"><div>{{ form.fee_rate.label_tag }}{{ form.fee_rate }}{{ form.fee_rate.errors }}</div><div>{{ form.payment_fee_rate.label_tag }}{{ form.payment_fee_rate }}{{ form.payment_fee_rate.errors }}</div><div>{{ form.payment_fixed.label_tag }}{{ form.payment_fixed }}{{ form.payment_fixed.errors }}</div><div>{{ form.target_margin.label_tag }}{{ form.target_margin }}{{ form.target_margin.errors }}</div></div><p class="helptext">费率按折后商品收入计算；固定手续费使用成本币种。请填写实际合同费率，未预设 Shopify 或平台收费标准。</p></fieldset>
 {% include 'market/partials/trial_budget_inputs.html' %}
+{% include 'market/partials/selection_assessment_inputs.html' %}
 <button class="calculate-button" type="submit">计算单件利润 <span class="htmx-indicator">· 计算中</span></button>
 </form></section>
 <section id="profit-result" class="card profit-output" aria-live="polite" data-has-result="{% if result %}true{% else %}false{% endif %}">
 <p class="eyebrow">PROFIT ESTIMATE</p><h2>这单的收益</h2><p id="profit-stale" class="notice warning" hidden>输入已修改，请重新计算以更新结果。</p>
 {% if result %}
 <div class="profit-total {% if result.negative %}loss{% endif %}"><small>{% if result.negative %}预计单件亏损{% else %}预计单件利润{% endif %}</small><strong>{{ result.net }} <span>{{ result.cost_currency }}</span></strong><p>折合 {{ result.sale_net }} {{ result.sale_currency }}</p></div>
+{% if assessment_result %}{% include 'market/partials/selection_assessment_result.html' %}{% endif %}
 <div class="result-pair"><div><small>利润率</small><strong>{% if result.margin is not None %}{{ result.margin }}%{% else %}—{% endif %}</strong></div><div><small>成本回报率</small><strong>{% if result.roi is not None %}{{ result.roi }}%{% else %}—{% endif %}</strong></div></div>
 <h3>费用拆解 · {{ result.cost_currency }}</h3><dl class="cost-breakdown"><dt>折后收入</dt><dd>{{ result.revenue }}</dd>{% for label,value in result.costs %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}<dt>平台费用</dt><dd>{{ result.fee }}</dd><dt>支付费用（含固定费）</dt><dd>{{ result.payment_fee }}</dd><dt class="total-line">总成本与费用</dt><dd class="total-line">{{ result.expenses }}</dd></dl>
 <div class="pricing-insight"><h3>定价参考 · {{ result.sale_currency }}</h3><p>保本成交价 <strong>{% if result.breakeven is not None %}{{ result.breakeven }}{% else %}当前费率或金额范围内不提供建议价{% endif %}</strong></p><p>目标利润率 {{ result.target_margin }}% 的成交价 <strong>{% if result.target_price is not None %}{{ result.target_price }}{% else %}当前费率、目标或金额范围内不提供建议价{% endif %}</strong></p><small>以上为折后成交价，已按同一舍入口径反算并核对达标；无需再次减折扣。利润率 = 利润 ÷ 收入；成本回报率 = 利润 ÷ 总成本。分母为零时显示 —。</small></div>
@@ -35,4 +37,4 @@
 {{ quote_metadata|json_script:'shipping-quote-metadata' }}
 </div>
 {% endblock %}
-{% block scripts %}<script src="{% static 'market/trial_budget.js' %}?v=1" defer></script><script src="{% static 'market/profit.js' %}?v=3" defer></script><script src="{% static 'market/shipping.js' %}?v=2" defer></script>{% endblock %}
+{% block scripts %}<script src="{% static 'market/trial_budget.js' %}?v=1" defer></script><script src="{% static 'market/selection_assessment.js' %}?v=2" defer></script><script src="{% static 'market/profit.js' %}?v=3" defer></script><script src="{% static 'market/shipping.js' %}?v=2" defer></script>{% endblock %}
