@@ -1,0 +1,1 @@
+{% extends 'market/base.html' %}{% block content %}<h1>这次测算未保存</h1><p class="notice error" role="alert">{{ form.non_field_errors }}请核对标红字段；状态失效时需返回原利润页面重新计算。</p><form method="post" action="{% url 'profit_study_save' %}">{% csrf_token %}{{ form.as_p }}<button>重试保存</button></form><a href="{% url 'profit' %}">返回利润工具重新计算 →</a>{% endblock %}
