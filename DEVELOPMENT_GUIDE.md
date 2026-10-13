@@ -6,6 +6,7 @@
 
 | 模块 | 服务 / 数据 | 页面与交互 | 主要验证 |
 | --- | --- | --- | --- |
+| 首次使用指引 | `first_use_views.py` 登录保护GET静态说明，无业务查询 | `first_use.html` / `first_use.css`，公共导航共用手机入口；复用原报价、利润、物流与记录路由 | `test_first_use.py` 禁止SQL、匿名跳转、非GET405、现有links/导航状态及普通账号登录说明；真实两布局 |
 | 成本视角选品判断 | `selection_assessment.py`复用现有账本，按未舍入比例目标和原预算结果判断；继承表单显式成本/核对确认 | 原利润页可选，独立partial/CSS/JS；限定请求失败清空旧结果，保留输入 | `test_selection_assessment.py`：真假/前缀/显式0、金额边界、批次亏损/零缓冲、来源归属、原模式和真实JS联动/错误事件；无新保存/模型 |
 | 小批量测品预算 | `trial_budget.py` 复用单件账本已舍入结果，区分基础准备资金/结算费用/全售出情景净利；`trial_budget_forms.py` 启用时明确必填 | 原利润页可选预算，独立输入/结果partial与CSS/JS；无保存/新路由/预测，首次勾选即时启用 | `test_trial_budget.py`：数量/费用边界、显式0、尾差/币种、预留不重复扣利润、原模式及来源/物流/HTMX兼容；最终验收见最新交接 |
 | 我的浏览器报价完整列表 | `browser_quote_library.py` / `browser_quote_library_forms.py`，复用本账号browser Snapshot、有限原标题/平台/币种筛选与20条稳定分页 | `browser_quote_library_views.py` / 独立模板CSS，首页有/无报价总入口；逐条进入现有私有报告和精确报价利润链接 | `test_browser_quote_library.py`：归属/公共排除/选项、GET无写、未知/转义、有限读取、分页/错误/空状态 |
