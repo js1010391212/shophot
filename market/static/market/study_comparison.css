@@ -1,0 +1,7 @@
+.study-comparison-choice { margin-bottom: 1rem; }
+.study-comparison-sources { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; margin: 1rem 0; }
+.study-comparison-sources article { overflow-wrap: anywhere; }
+.study-comparison-scroll { max-width: 100%; overflow-x: auto; margin: 1rem 0; }
+.study-comparison-scroll table { min-width: 620px; }
+.study-comparison-scroll th, .study-comparison-scroll td { white-space: nowrap; }
+@media(max-width:700px) { .study-comparison-sources { grid-template-columns: minmax(0,1fr); } }
