@@ -1,10 +1,12 @@
 from django.urls import path
 from . import views, workflow_views, price_history_views, price_monitoring_views, sample_market_views, otto_views, page_import_views, product_review_views
+from . import study_comparison_views
 from . import first_use_views
 from . import profit_study_views
 from . import shipping_views, browser_capture_views, profit_views, browser_quote_library_views
 
 urlpatterns = [
+    path('tools/profit/studies/compare/', study_comparison_views.comparison, name='study_comparison'),
     path('guide/', first_use_views.guide, name='first_use'),
     path('tools/profit/studies/', profit_study_views.library, name='profit_study_list'),
     path('tools/profit/studies/save/', profit_study_views.save, name='profit_study_save'),
