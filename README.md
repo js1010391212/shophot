@@ -10,12 +10,15 @@
 
 本地接续开发先阅读 [HANDOFF.md](HANDOFF.md)，数据库配置见 [DATABASE.md](DATABASE.md)。普通使用者登录后可从侧栏“使用指引”（`/guide/`）开始。
 
+本机核心首版候选已在2026-10-13完成普通账号流程与当前结构备份恢复验收；使用入口和准确范围见 [MVP_LOCAL_CANDIDATE.md](MVP_LOCAL_CANDIDATE.md)，验收状态见 [MVP_ACCEPTANCE_MATRIX.md](MVP_ACCEPTANCE_MATRIX.md)。该状态不代表新增平台实站、公网或商业验收。
+
 ## 当前功能与验证范围
 
 - 自己的浏览器报价列表、报告与报价来源核对，可带入原利润测算。
 - 实际采购、物流、平台及支付费用核算，手动汇率；物流报价管理与自有表格导入。
 - 可选成本视角选品判断、小批量测品预算；只解释用户成本情景，不预测销量或保证盈利。
 - 私有测算研究记录：成功计算后保存，查看历史、继续测算以及移出恢复，按账号隔离。
+- 比较两份本账号仍在研究中的历史情景；同币种、汇率与单位口径才提供单件差额，预算再核对相同数量，未知成本保持提示。
 - 公共商品与 Shopify 目录研究、价格历史和评论样本分析，具体来源及缺项在报告中展示。
 - CSV 与手动观测记录、采集任务状态和失败原因；未知不补零，测试数据不代表市场数据。
 
@@ -25,12 +28,16 @@
 
 普通使用者：使用负责人提供的账号访问已运行的本机 `http://127.0.0.1:8000`。账号创建、权限和密码重置由负责人处理，没有默认账号或默认密码。
 
-维护者在 Linux/macOS 仓库目录运行：
+维护者在 Linux/macOS 仓库目录明确选择已安装的 Python 3.12 或以上版本（下面以 `python3.12` 为例，也可填写可信可执行文件的绝对路径）：
 
 ```bash
-bash scripts/setup.sh
+SHOPHOT_PYTHON=python3.12 bash scripts/setup.sh
 bash scripts/start.sh
 ```
+
+`setup.sh` 在改动环境前检查所选版本；已有 `.venv` 的实际 Python 主次版本必须匹配，环境损坏或配置不一致时会明确拒绝，不自动覆盖或清空。未指定 `SHOPHOT_PYTHON` 时使用 `python3`，它也必须满足3.12要求。
+
+安装需要配置的包源可用。若需在这一次命令中使用官方源，可运行 `PIP_INDEX_URL=https://pypi.org/simple SHOPHOT_PYTHON=python3.12 bash scripts/setup.sh`；这不会修改全局pip配置，也不关闭TLS校验。依赖继续使用当前固定版本；包源失败不代表这些版本不存在，应先核对解释器和包源。
 
 已有本机 PostgreSQL 配置时，`start.sh` 先调用数据库启动脚本，再应用迁移并启动网页和单个采集进程。新环境未配置 PostgreSQL 时按 SQLite 兼容模式运行；安装或迁移 PostgreSQL 参见 [DATABASE.md](DATABASE.md)，不要复制他人的私有配置。按 Ctrl+C 停止网页与采集进程；脚本使用 Django 开发服务器，仅供本机开发使用。不要在已有服务运行时再启动一组网页或 worker。
 
@@ -39,7 +46,7 @@ bash scripts/start.sh
 Windows PowerShell 新环境可分别执行（未配置 PostgreSQL 时使用 SQLite）：
 
 ```powershell
-py -3 -m venv .venv
+py -3.12 -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 .venv\Scripts\python manage.py migrate
 .venv\Scripts\python manage.py runserver
@@ -56,7 +63,8 @@ py -3 -m venv .venv
 3. 填写实际采购、物流及其它费用，必要时填写汇率。物流可手填、选择报价或导入自己的表格；公开参考价不能替代实际合同核对。
 4. 按需启用成本判断与测品预算，未知先核实，明确没有的费用填 0。修改输入后重新计算，失败时不使用旧结果。
 5. 成功计算后填写名称和备注，保存最后成功计算。在“我的测算记录” `/tools/profit/studies/` 查看、继续、移出或恢复；历史快照不会被后来来源变化覆盖，继续时重新核对当前条件。
-6. CSV 导入和已有商品手动观测仍须提供真实来源与时间。采集失败查看具体原因，不把离线文件或示例当作当前平台实站成功。
+6. 有两份自己的研究记录时进入“比较两份研究记录” `/tools/profit/studies/compare/`，核对历史条件和成本假设差异，再回到任一份继续测算；不做赢家排名或销量预测。
+7. CSV 导入和已有商品手动观测仍须提供真实来源与时间。采集失败查看具体原因，不把离线文件或示例当作当前平台实站成功。
 
 仓库示例和演示商品为虚构数据，不是市场证据；示例商品链接指向 `example.com`，不能证明平台采集可用。
 
