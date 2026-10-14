@@ -39,7 +39,9 @@ bash scripts/start.sh
 
 安装需要配置的包源可用。若需在这一次命令中使用官方源，可运行 `PIP_INDEX_URL=https://pypi.org/simple SHOPHOT_PYTHON=python3.12 bash scripts/setup.sh`；这不会修改全局pip配置，也不关闭TLS校验。依赖继续使用当前固定版本；包源失败不代表这些版本不存在，应先核对解释器和包源。
 
-已有本机 PostgreSQL 配置时，`start.sh` 先调用数据库启动脚本，再应用迁移并启动网页和单个采集进程。新环境未配置 PostgreSQL 时按 SQLite 兼容模式运行；安装或迁移 PostgreSQL 参见 [DATABASE.md](DATABASE.md)，不要复制他人的私有配置。按 Ctrl+C 停止网页与采集进程；脚本使用 Django 开发服务器，仅供本机开发使用。不要在已有服务运行时再启动一组网页或 worker。
+已有本机 PostgreSQL 配置时，`start.sh` 先调用数据库启动脚本，再应用迁移并启动网页和单个采集进程。新环境未配置 PostgreSQL 时按 SQLite 兼容模式运行；安装或迁移 PostgreSQL 参见 [DATABASE.md](DATABASE.md)，不要复制他人的私有配置。按 Ctrl+C 停止网页与采集进程；脚本使用 Django 开发服务器，仅供本机开发使用。同一实际项目目录的 `start.sh` 由系统生命周期锁保护，换端口也会拒绝重复启动；目标地址或端口不可用时，在数据库和迁移之前拒绝。迁移与检查按顺序执行，失败、网页/worker退出、Ctrl+C或TERM会清理本轮子进程并释放启动锁；不删除锁文件，也不停止其它目录的服务。
+
+保护范围仅包含此启动入口，不覆盖手工启动worker或不同目录指向同一数据库的情况。SIGKILL无法执行退出清理；本轮仍在执行的准备包装、迁移、检查或网页/worker保留锁（真正PostgreSQL进程不继承锁），须维护者核对并停止这些确切进程后再启动，不能凭锁文件存在与否判断，也不要删除锁文件来绕过保护。若系统拒绝信号且仍有活进程或状态无法核实，清理会明确报失败；残留持锁进程须由维护者核对，不扩大系统权限或宣称已清空。
 
 新环境首次管理员账号由维护者运行 `.venv/bin/python manage.py createsuperuser` 创建，日常账号无需管理员权限。此命令不用于普通卖家自行升级权限，不加载演示数据作为首次使用步骤。
 
