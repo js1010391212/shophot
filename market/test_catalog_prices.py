@@ -61,6 +61,29 @@ class PriceParserTests(SimpleTestCase):
             with self.assertRaisesMessage(CollectionError,'其他域名'):
                 collect_catalog_prices(ROOT,[{'url':'https://evil.example.com/products/coat'}],lambda i,r:None,client,pause=lambda n:None)
 
+    def test_blank_line_prohibition_keeps_old_item_and_makes_no_product_request(self):
+        calls = []; rows = []
+        item = {'url': URL, 'price_low': '9.00', 'currency': 'GBP'}
+        def handler(request):
+            calls.append(request.url.path)
+            return httpx.Response(200, text='User-agent: *\n\nDisallow: /products/')
+        with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+            collect_catalog_prices(ROOT, [item], lambda i,row: rows.append(row), client, pause=lambda n: None)
+        self.assertEqual(calls, ['/robots.txt'])
+        self.assertIn('robots.txt', rows[0]['price_error'])
+        self.assertEqual(item, {'url': URL, 'price_low': '9.00', 'currency': 'GBP'})
+
+    def test_named_agent_rules_and_delay_used_by_html_collector(self):
+        pauses = []; rows = []
+        def handler(request):
+            if request.url.path == '/robots.txt':
+                return httpx.Response(200, text='User-agent: *\nDisallow: /\nUser-agent: ShopHot\nCrawl-delay: 2')
+            return httpx.Response(200, text=html(), headers={'content-type': 'text/html'})
+        with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+            collect_catalog_prices(ROOT, [{'url': URL}], lambda i,row: rows.append(row), client, pause=pauses.append)
+        self.assertEqual(pauses, [2])
+        self.assertEqual(rows[0]['price_low'], '9.00')
+
 class PriceWorkflowTests(TestCase):
     def setUp(self):
         self.client.force_login(get_user_model().objects.create_user('price-test',password='test-pass-123'))

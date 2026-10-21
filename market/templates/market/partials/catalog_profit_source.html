@@ -1,0 +1,8 @@
+{% load tz %}<section class="notice profit-reference" aria-label="测算报价来源"><h2>本次参考报价 · 目录历史观测 #{{ catalog_source.id }}</h2>
+<p>{{ catalog_source.title }} · <strong>{{ catalog_source.price }} {{ catalog_source.currency }}</strong></p>
+<p>观测：{{ quote_reference.quote.observed_at|timezone:'Asia/Shanghai'|date:'Y-m-d H:i:s' }}（北京时间），不是实时行情。</p>
+<p>商品：{{ catalog_source.url }}</p><p>规格：{{ catalog_source.quote_scope.identities.0.name }} · SKU：{{ catalog_source.sku_id|default:'未知' }}</p><p>规格链接：{{ catalog_source.quote_scope.identities.0.url }}</p><p>已核对单一明确规格。</p>
+{% if catalog_source.candidate_id %}<p>私有候选 #{{ catalog_source.candidate_id }} · <a href="{% url 'candidates' %}">返回我的候选清单</a></p>{% endif %}
+<ul>{% for condition in catalog_source.conditions %}<li>{{ condition }}</li>{% endfor %}</ul>
+{% if catalog_report_link %}<a href="{{ catalog_report_link }}">返回目录商品报告 →</a>{% endif %}
+<p>原报价只读；下方售价和成本是可修改的用户假设，测算不代表竞品真实利润。默认不再减价；收货国家和优惠、税运条件未知，不用于推断物流或承运资格。</p></section>

@@ -2,7 +2,6 @@
 import json
 import time
 from urllib.parse import urljoin, urlsplit
-from urllib.robotparser import RobotFileParser
 import httpx
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
@@ -14,6 +13,7 @@ from .shopify import normalize_shopify_url
 from .validation import clean_price, clean_currency
 from .reviews import product_reviews, widget_review_samples
 from .catalog_content import product_content, plain_text, same_product
+from .robots_policy import load_robots
 
 BATCH_SIZE = 10
 
@@ -136,16 +136,13 @@ def collect_catalog_prices(root, items, save, client=None, pause=time.sleep):
                     if len(data) > MAX_BYTES:
                         raise CollectionError('公开页面超过 2 MB，本批次已停止。')
                 return bytes(data)
-        rules = RobotFileParser(root + '/robots.txt')
-        rules.parse(read(root + '/robots.txt').decode('utf-8', errors='replace').splitlines())
-        delay = max(1, rules.crawl_delay(AGENT) or 1)
-        if delay > 30:
-            raise CollectionError('店铺要求较长采集间隔，本次停止。')
+        rules = load_robots(client, root, AGENT)
+        delay = rules.delay
         for index, item in enumerate(items[:BATCH_SIZE]):
             target = normalize_shopify_url(item['url'])
             if urlsplit(target).hostname != urlsplit(root).hostname:
                 raise CollectionError('商品目录指向其他域名，本次停止。')
-            if not rules.can_fetch(AGENT, target):
+            if not rules.can_fetch(target):
                 save(index, {'price_error': 'robots.txt 不允许采集此商品。'})
                 continue
             pause(delay)

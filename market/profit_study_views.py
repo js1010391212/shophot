@@ -46,7 +46,7 @@ def detail(request,pk):
     return render(request,'market/profit_study_detail.html',{'record':record,
         'calculated_at':parse_datetime(record.snapshot['calculated_at']),
         'source_observed_at':parse_datetime(source['observed_at']) if source and source.get('observed_at') else None,
-        'source_label':dict(Snapshot.Source.choices).get(source['source'],'未知来源') if source else '',
+        'source_label':('目录公开页面历史观测' if source.get('kind')=='catalog' else dict(Snapshot.Source.choices).get(source['source'],'未知来源')) if source else '',
         'saved':record.snapshot['scenario'],'input_rows':history_inputs(record.snapshot['scenario']),'source_link':report_link(request.user,record.snapshot['scenario'])})
 
 

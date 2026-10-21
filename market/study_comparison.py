@@ -1,4 +1,4 @@
-"""Read historical version-1 economics without recalculating platform or freight."""
+"""Read historical version-1/2 economics without recalculating platform or freight."""
 from decimal import Decimal, InvalidOperation, localcontext
 import re
 from uuid import UUID
@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.utils.dateparse import parse_datetime
 from .models import ProfitStudyRecord
 from .profit_studies import INPUT_FIELDS, OPTIONAL_UNIT
+from .catalog_profit_references import valid_catalog_source
 
 UNIT_LABELS=('采购成本','履约运费','广告成本','其他成本')
 UNIT_FIELDS=(('历史折后售价','discounted_price'),('单件收入','revenue'),('平台费用','fee'),
@@ -55,7 +56,7 @@ def read_history(record):
     try:
         payload=record.snapshot
         if not isinstance(payload,dict) or set(payload)!={'version','owner','nonce','calculated_at','scenario'}:invalid()
-        if type(payload['version']) is not int or payload['version']!=1 or type(payload['owner']) is not int or payload['owner']!=record.owner_id:invalid()
+        if type(payload['version']) is not int or payload['version'] not in (1,2) or type(payload['owner']) is not int or payload['owner']!=record.owner_id:invalid()
         UUID(payload['nonce']);calculated=moment(payload['calculated_at'])
         scenario=payload['scenario']
         if not isinstance(scenario,dict) or set(scenario)!={'inputs','unit','trial','assessment','shipping','source','missing_optional','optional_presence'}:invalid()
@@ -145,7 +146,10 @@ def read_history(record):
             if any(batch[k]<0 for k in ('prepared','settlement','revenue','expenses','reserve')):invalid()
         elif trial is not None:invalid()
         source=scenario['source'];observed=None
-        if source is not None:
+        if payload['version']==2:
+            if not valid_catalog_source(source):invalid()
+            observed=moment(source['observed_at'])
+        elif source is not None:
             if not isinstance(source,dict) or set(source)!={'kind','id','snapshot_id','title','url','price','captured_price','currency','observed_at','source','sku_id','market_country','conditions','conditions_unknown'}:invalid()
             if source['kind'] not in ('observation','product') or any(type(source[k]) is not int or not 1<=source[k]<=9223372036854775807 for k in ('id','snapshot_id')):invalid()
             for key in ('title','url','source'):text(source[key])

@@ -6,7 +6,8 @@ from django.http import Http404
 from django.views.decorators.http import require_http_methods
 
 from .profit import calculate_profit
-from .profit_references import resolve_reference, quote_initial
+from .profit_references import resolve_reference, quote_initial, reference_money
+from .catalog_profit_references import catalog_report_link, catalog_source
 from .shipping_forms import ShippingEstimateForm
 from .selection_assessment_forms import SelectionAssessmentProfitForm
 from .selection_assessment import assess_selection
@@ -50,8 +51,8 @@ def profit(request):
     if study and request.method == 'GET' and initial.get('shipping_mode') == 'quote' and initial.get('shipping_quote') not in form.shipping_form.quotes:
         reference_error = reference_error or '原物流引用已不可用，请重新选择物流并核算。'
     # Private currency codes must come from the resolved owned row, not the query.
-    if reference and reference['snapshot'].currency not in dict(form.fields['sale_currency'].choices):
-        currency = reference['snapshot'].currency
+    currency = reference_money(reference)[1] if reference else None
+    if reference and currency not in dict(form.fields['sale_currency'].choices):
         if len(currency) == 3 and currency.isascii() and currency.isupper() and currency.isalpha():
             form.fields['sale_currency'].choices = [*form.fields['sale_currency'].choices, (currency, currency)]
     result = calculate_profit(form.cleaned_data) if status == 200 and request.method == 'POST' and form.is_valid() else None
@@ -68,6 +69,8 @@ def profit(request):
     response = render(request, 'market/profit.html', {
         'form': form, 'result': result, 'study':study, 'save_form':save_form, 'save_error':save_error, 'study_source_notice':study_source_notice,
         'trial_result': trial_result, 'assessment_result': assessment_result, 'quote_reference': reference, 'reference_error': reference_error,
+        'catalog_source': catalog_source(reference) if reference and reference['kind']=='catalog' else None,
+        'catalog_report_link': catalog_report_link(reference) if reference and reference['kind']=='catalog' else '',
         'shipping_result': form.shipping_estimate,
         'quote_metadata': {key: quote.metadata() for key, quote in form.shipping_form.quotes.items()},
     }, status=status)

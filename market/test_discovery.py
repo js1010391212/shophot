@@ -32,6 +32,21 @@ class DiscoveryTests(SimpleTestCase):
         with self.public_client(robots='User-agent: *\nDisallow: /') as client, self.assertRaisesMessage(CollectionError, 'robots.txt'):
             discover(ROOT, client, pause=lambda n: None)
 
+    def test_blank_line_rules_stop_before_sitemap(self):
+        calls = []
+        def handler(request):
+            calls.append(request.url.path)
+            return httpx.Response(200, text='User-agent: *\n\n# preserve group\nDisallow: /sitemap')
+        with httpx.Client(transport=httpx.MockTransport(handler)) as client, self.assertRaisesMessage(CollectionError, 'robots.txt'):
+            discover(ROOT, client, pause=lambda n: None)
+        self.assertEqual(calls, ['/robots.txt'])
+
+    def test_crawl_delay_stays_between_allowed_sitemaps(self):
+        pauses = []
+        with self.public_client(robots='User-agent: *\n\nCrawl-delay: 2.5') as client:
+            discover(ROOT, client, pause=pauses.append)
+        self.assertEqual(pauses, [2.5, 2.5])
+
     def test_limit_no_false_full_inventory(self):
         product='<urlset>'+''.join(f'<url><loc>{ROOT}/products/p{i}</loc></url>' for i in range(101))+'</urlset>'
         with self.public_client(product=product) as client:

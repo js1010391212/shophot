@@ -1,5 +1,6 @@
 """Read-only assessment of validated unit economics, not market demand."""
 from decimal import Decimal
+from .profit_references import reference_money
 
 
 def assess_selection(result, data, trial=None, reference=None):
@@ -36,8 +37,9 @@ def assess_selection(result, data, trial=None, reference=None):
     unknowns = []
     changed = False
     if reference:
-        snapshot, capture = reference['snapshot'], reference['data']
-        changed = data['selling_price'] != snapshot.price or data['sale_currency'] != snapshot.currency
+        price, currency = reference_money(reference)
+        capture = reference.get('data', {})
+        changed = data['selling_price'] != price or data['sale_currency'] != currency
         if reference['kind'] == 'observation':
             if not capture.get('sku_id'):
                 unknowns.append('规格编号未知，待核对。')
