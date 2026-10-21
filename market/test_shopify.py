@@ -86,11 +86,53 @@ class ShopifyCollectorTests(SimpleTestCase):
                 read_json(client, URL)
 
     @patch('market.shopify.read_json', side_effect=[{'currency': 'USD'}, DATA])
-    def test_endpoints_keep_locale_and_market(self, read):
+    @patch('market.shopify.time.sleep')
+    @patch('market.shopify.load_robots')
+    def test_endpoints_keep_locale_and_market(self, rules, pause, read):
+        rules.return_value.can_fetch.return_value = True
+        rules.return_value.delay = 1
         result = collect_shopify('https://store.example.com/en/products/coat?variant=42&currency=USD')
         self.assertEqual(result['price'], Decimal('129.00'))
         self.assertEqual(read.call_args_list[0].args[1], 'https://store.example.com/en/cart.js?currency=USD')
         self.assertEqual(read.call_args_list[1].args[1], 'https://store.example.com/en/products/coat.js?currency=USD')
+
+    def test_robots_gate_runs_before_either_ajax_endpoint(self):
+        for blocked in ('/cart', '/products/'):
+            calls = []
+            def handler(request):
+                calls.append(str(request.url))
+                return httpx.Response(200, text='User-agent: *\n\nDisallow: ' + blocked)
+            client = httpx.Client(transport=httpx.MockTransport(handler))
+            with patch('market.shopify.httpx.Client', return_value=client), self.assertRaisesMessage(CollectionError, 'robots.txt'):
+                collect_shopify(URL)
+            self.assertEqual(calls, ['https://store.example.com/robots.txt'])
+
+    def test_allowed_ajax_reuses_client_cookies_and_respects_delay(self):
+        calls = []
+        def handler(request):
+            calls.append(request.url.path)
+            if request.url.path == '/robots.txt':
+                return httpx.Response(200, text='User-agent: *\nCrawl-delay: 3')
+            if request.url.path == '/cart.js':
+                return httpx.Response(200, json={'currency': 'USD'}, headers={'set-cookie': 'market=US; Path=/; Secure'})
+            self.assertIn('market=US', request.headers.get('cookie', ''))
+            return httpx.Response(200, json=DATA)
+        client = httpx.Client(transport=httpx.MockTransport(handler))
+        with patch('market.shopify.httpx.Client', return_value=client), patch('market.shopify.time.sleep') as pause:
+            result = collect_shopify(URL)
+        self.assertEqual(result['currency'], 'USD')
+        self.assertEqual(calls, ['/robots.txt', '/cart.js', '/products/coat.js'])
+        self.assertEqual([call.args[0] for call in pause.call_args_list], [3, 3])
+
+    def test_rate_limit_retry_keeps_crawl_delay_floor(self):
+        count = 0
+        def handler(request):
+            nonlocal count
+            count += 1
+            return httpx.Response(429, headers={'retry-after': '1'}) if count == 1 else httpx.Response(200, json=DATA)
+        with httpx.Client(transport=httpx.MockTransport(handler)) as client, patch('market.shopify.time.sleep') as pause:
+            self.assertEqual(read_json(client, URL, minimum_delay=3), DATA)
+        pause.assert_called_once_with(3)
 
 
 class ShopifyWorkflowTests(TestCase):

@@ -22,7 +22,7 @@ def comparison(request):
                 histories=[read_history(row) for row in records]
                 for history in histories:
                     history['source_link']=report_link(request.user,history['scenario'])
-                    history['source_label']=dict(Snapshot.Source.choices).get(history['source']['source'],'未知来源') if history['source'] else ''
+                    history['source_label']=('目录公开页面历史观测' if history['source'].get('kind')=='catalog' else dict(Snapshot.Source.choices).get(history['source']['source'],'未知来源')) if history['source'] else ''
                 result=compare_histories(*histories)
             except ValidationError as problem:
                 error=' '.join(problem.messages);histories=[];status=400

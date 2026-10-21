@@ -1,4 +1,4 @@
-{% extends 'market/base.html' %}{% load static %}
+{% extends 'market/base.html' %}{% load static catalog_profit %}
 {% block title %}{{ title }} · 商品报告 · ShopHot{% endblock %}
 {% block content %}
 <div class="heading">
@@ -50,7 +50,7 @@
   {% for review in item.review_samples %}<article class="product-review" id="review-sample-{{ forloop.counter0 }}" tabindex="-1">{% if review.title %}<h3>{{ review.title }}</h3>{% endif %}<p>{{ review.body }}</p><small class="muted">{{ review.date|default:'未提供评价日期' }}{% if review.rating != None %} · {{ review.rating }} / 5{% endif %}</small></article>{% empty %}<p>还没有可明确归属该商品的评论样本，暂不生成评价主题分析。</p>{% endfor %}
 </section>
 <section class="card"><h2>标题词条</h2><p>{% for term in terms %}<a class="badge" href="{% url 'store_research' scan.pk %}?term={{ term|urlencode }}">{{ term }}</a> {% empty %}尚未提取{% endfor %}</p><p class="muted">由标题提取，点击查看同店相关商品；不是市场搜索量。</p></section>
-<section class="card" id="product-history"><div class="heading compact"><h2>最近报价记录</h2><a class="button secondary" href="{% url 'catalog_history' scan.pk index %}">查看报价历史分析 →</a></div><p class="muted">最多显示 20 次成功观测。记录是各次公开规格范围，不能当作某一规格成交价；没有历史数据时不推算走势。</p><div class="catalog-table"><table><thead><tr><th>观测时间</th><th>原币种公开报价</th><th>来源</th></tr></thead><tbody>{% for quote in quotes %}<tr><td>{{ quote.observed_at|date:'Y-m-d H:i:s T' }}</td><td>{{ quote.currency }} {{ quote.price_low }}{% if quote.price_low != quote.price_high %} – {{ quote.price_high }}{% endif %}</td><td><a href="{{ quote.url }}" target="_blank" rel="noopener noreferrer">公开商品页面 ↗</a></td></tr>{% empty %}<tr><td colspan="3">暂无独立历史记录；目录已有报价请看上方观测时间。</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="card" id="product-history"><div class="heading compact"><h2>最近报价记录</h2><a class="button secondary" href="{% url 'catalog_history' scan.pk index %}">查看报价历史分析 →</a></div><p class="muted">最多显示 20 次成功观测。记录是各次公开规格范围，不能当作某一规格成交价；没有历史数据时不推算走势。</p><div class="catalog-table"><table><thead><tr><th>观测时间</th><th>原币种公开报价</th><th>来源</th></tr></thead><tbody>{% for quote in quotes %}<tr><td>{{ quote.observed_at|date:'Y-m-d H:i:s T' }}</td><td>{{ quote.currency }} {{ quote.price_low }}{% if quote.price_low != quote.price_high %} – {{ quote.price_high }}{% endif %}</td><td>{% catalog_profit_link quote candidate as profit_link %}{% if profit_link %}<a href="{{ profit_link }}">用这次报价测算成本 →</a> · {% else %}<span class="muted">范围或规格依据不足，请手填假设。</span> · {% endif %}<a href="{{ quote.url }}" target="_blank" rel="noopener noreferrer">公开商品页面 ↗</a></td></tr>{% empty %}<tr><td colspan="3">暂无独立历史记录；目录已有报价请看上方观测时间。</td></tr>{% endfor %}</tbody></table></div></section>
 {% endblock %}
 
 {% block scripts %}<script src="{% static 'vendor/echarts.min.js' %}" defer></script><script src="{% static 'market/review_analysis.js' %}" defer></script>{% endblock %}

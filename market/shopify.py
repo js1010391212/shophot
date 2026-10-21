@@ -10,6 +10,7 @@ import httpx
 from django.core.exceptions import ValidationError
 from .collectors import CollectionError, MAX_BYTES
 from .validation import clean_currency, clean_price, clean_url
+from .robots_policy import load_robots
 
 
 def normalize_shopify_url(value):
@@ -79,14 +80,14 @@ class ShopifyRateLimited(CollectionError):
         super().__init__(f'Shopify 接口限流，请至少 {delay} 秒后重试；未保存价格。')
 
 
-def read_json(client, url):
+def read_json(client, url, minimum_delay=1):
     try:
         return _read_json_once(client, url)
     except ShopifyRateLimited as exc:
         # 尊重 Retry-After；只进行一次延迟重试，不切换身份或规避限流。
         if exc.delay > 60:
             raise
-        time.sleep(exc.delay)
+        time.sleep(max(exc.delay, minimum_delay))
         return _read_json_once(client, url)
 
 
@@ -140,9 +141,14 @@ def collect_shopify(url):
                           transport=PublicShopifyTransport(),
                           headers={'User-Agent': 'ShopHot/0.2 (public product monitoring)'}) as client:
             cart_url = urlunsplit(('https', parts.netloc, locale + '/cart.js', market_query, ''))
-            cart = read_json(client, cart_url)
             product_url = urlunsplit(('https', parts.netloc, parts.path + '.js', market_query, ''))
-            product = read_json(client, product_url)
+            rules = load_robots(client, urlunsplit(('https', parts.netloc, '', '', '')))
+            if not rules.can_fetch(cart_url) or not rules.can_fetch(product_url):
+                raise CollectionError('robots.txt 不允许读取商品或币种接口，未保存价格。')
+            time.sleep(rules.delay)
+            cart = read_json(client, cart_url, minimum_delay=rules.delay)
+            time.sleep(rules.delay)
+            product = read_json(client, product_url, minimum_delay=rules.delay)
             return parse_shopify(product, cart, url)
     except ValidationError as exc:
         raise CollectionError('Shopify 商品链接无效。') from exc

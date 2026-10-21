@@ -1,6 +1,6 @@
 # 两份私有研究记录的成本情景比较
 
-首版有界模块，最终实现、高级精确复核、必要回归与实际UI已验收，进入准确发布。基线PR22/main 3b6b9954a3fc160d790ddde934d2b44f2ab7af7d；先读当前profit_studies.py、ProfitStudyRecord与原列表/详情，复用保存时的不可变JSON，不增加模型、迁移或新计算账本。
+首版有界模块，最终实现、高级精确复核、必要回归与实际UI已验收，PR23/main9ce4c55已准确发布、本机更新和烟测通过。基线PR22/main 3b6b9954a3fc160d790ddde934d2b44f2ab7af7d；先读当前profit_studies.py、ProfitStudyRecord与原列表/详情，复用保存时的不可变JSON，不增加模型、迁移或新计算账本。
 
 ## 目标与范围
 

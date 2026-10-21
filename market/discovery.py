@@ -3,13 +3,13 @@ import re
 import time
 import xml.etree.ElementTree as ET
 from urllib.parse import urlsplit, urlunsplit
-from urllib.robotparser import RobotFileParser
 import httpx
 from django.core.exceptions import ValidationError
 from .collectors import CollectionError, MAX_BYTES
 from .network import PublicProductTransport
 from .validation import clean_url
 from .shopify import normalize_shopify_url
+from .robots_policy import load_robots
 
 AGENT = 'ShopHot'
 LIMIT = 100
@@ -54,14 +54,10 @@ def discover(url, client=None, pause=time.sleep):
                     if len(data) > MAX_BYTES:
                         raise CollectionError('目录响应超过 2 MB，已停止。')
                 return bytes(data)
-        robots_url = root_url + '/robots.txt'
-        rules = RobotFileParser(robots_url)
-        rules.parse(read(robots_url).decode('utf-8', errors='replace').splitlines())
-        delay = max(1, rules.crawl_delay(AGENT) or 1)
-        if delay > 30:
-            raise CollectionError('店铺要求较长采集间隔，本次停止。')
+        rules = load_robots(client, root_url, AGENT)
+        delay = rules.delay
         def sitemap(target):
-            if not rules.can_fetch(AGENT, target):
+            if not rules.can_fetch(target):
                 raise CollectionError('robots.txt 不允许读取该站点地图。')
             pause(delay)
             return xml_document(read(target))
@@ -83,7 +79,7 @@ def discover(url, client=None, pause=time.sleep):
         for doc in docs:
             for node in doc.findall('{*}url'):
                 location = node.findtext('{*}loc') or ''
-                if urlsplit(location).hostname != urlsplit(root_url).hostname or not rules.can_fetch(AGENT, location):
+                if urlsplit(location).hostname != urlsplit(root_url).hostname or not rules.can_fetch(location):
                     continue
                 try:
                     normalized = normalize_shopify_url(location)

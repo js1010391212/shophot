@@ -15,9 +15,10 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import ProfitStudyRecord, ShippingRate, Snapshot, Product
+from .models import ProfitStudyRecord, ShippingRate, Snapshot, Product, CatalogPriceObservation, CatalogCandidate, StoreDiscovery, StorePriceJob
+from .catalog_profit_references import catalog_source, valid_catalog_source, catalog_report_link
 from .profit import calculate_profit
-from .profit_references import resolve_reference, quote_initial
+from .profit_references import resolve_reference, quote_initial, reference_money
 from .selection_assessment import assess_selection
 from .selection_assessment_forms import SelectionAssessmentProfitForm
 from .trial_budget import calculate_trial_budget
@@ -45,12 +46,16 @@ def canonical(value):
 
 def reference_request(owner, source):
     query=QueryDict('',mutable=True)
-    if source: query[source['kind']]=str(source['id'])
+    if source:
+        query[source['kind']]=str(source['id'])
+        if source['kind']=='catalog' and source.get('candidate_id') is not None:
+            query['candidate']=str(source['candidate_id'])
     return SimpleNamespace(user=owner,GET=query,POST=QueryDict())
 
 
 def source_facts(reference):
     if not reference:return None
+    if reference['kind']=='catalog':return catalog_source(reference)
     row,capture=reference['snapshot'],reference['data']
     return plain(dict(kind=reference['kind'],id=reference['id'],snapshot_id=row.pk,
         title=capture.get('title') or reference['product'].title,url=reference['product'].url,
@@ -91,7 +96,7 @@ def require_consistent_reference(reference):
 def signed_state(owner, form, result, trial, assessment, reference):
     if not form.is_bound or not form.is_valid() or result is None:raise ValidationError(RECALCULATE)
     require_consistent_reference(reference)
-    payload=dict(version=1,owner=owner.pk,nonce=str(uuid4()),calculated_at=timezone.now().isoformat(),
+    payload=dict(version=2 if reference and reference['kind']=='catalog' else 1,owner=owner.pk,nonce=str(uuid4()),calculated_at=timezone.now().isoformat(),
                  scenario=scenario_snapshot(form,result,trial,assessment,reference))
     token=signing.dumps(payload,salt=SALT,compress=False)
     unpack(owner,token)
@@ -103,7 +108,7 @@ def unpack(owner, token):
     try:
         if not isinstance(token,str) or not 1<=len(token)<=MAX_STATE or token.startswith('.'):raise ValueError
         payload=signing.loads(token,salt=SALT,max_age=3600)
-        if set(payload)!={'version','owner','nonce','calculated_at','scenario'} or type(payload['version']) is not int or payload['version']!=1 or payload['owner']!=owner.pk:raise ValueError
+        if set(payload)!={'version','owner','nonce','calculated_at','scenario'} or type(payload['version']) is not int or payload['version'] not in (1,2) or payload['owner']!=owner.pk:raise ValueError
         if type(payload['owner']) is not int or not isinstance(payload['nonce'],str) or str(UUID(payload['nonce']))!=payload['nonce']:raise ValueError
         if not isinstance(payload['calculated_at'],str) or len(payload['calculated_at'])>40 or datetime.fromisoformat(payload['calculated_at']).tzinfo is None:raise ValueError
         scenario=payload['scenario']
@@ -112,7 +117,9 @@ def unpack(owner, token):
         if not isinstance(scenario['missing_optional'],list) or any(key not in OPTIONAL_UNIT for key in scenario['missing_optional']):raise ValueError
         if not isinstance(scenario['optional_presence'],dict) or set(scenario['optional_presence'])!=set(OPTIONAL_UNIT) or any(v not in ('missing','blank','explicit') for v in scenario['optional_presence'].values()):raise ValueError
         source=scenario['source']
-        if source is not None:
+        if payload['version']==2:
+            if not valid_catalog_source(source):raise ValueError
+        elif source is not None:
             if not isinstance(source,dict) or set(source)!={'kind','id','snapshot_id','title','url','price','captured_price','currency','observed_at','source','sku_id','market_country','conditions','conditions_unknown'}:raise ValueError
             if source['kind'] not in ('observation','product') or any(type(source[k]) is not int or source[k]<1 for k in ('id','snapshot_id')):raise ValueError
             if not isinstance(source['conditions'],list) or len(source['conditions'])>50 or any(not isinstance(v,str) or len(v)>1000 for v in source['conditions']):raise ValueError
@@ -135,6 +142,8 @@ def current_reference(owner, snapshot):
         reference=resolve_reference(reference_request(owner,snapshot['source']))
         if snapshot['source'] is not None and reference is None:
             raise ValidationError('原报价已不可访问，请重新选择报价并核算。')
+        if reference and reference['kind']=='catalog' and source_facts(reference)!=snapshot['source']:
+            raise ValidationError('原目录观测条件已改变，请重新选择报价并核算。')
         return reference
     except (Http404,ValidationError):raise ValidationError('原报价已不可访问，请重新选择报价并核算。') from None
 
@@ -147,7 +156,7 @@ def recalculated(owner, snapshot):
         if presence=='missing':raw.pop(key,None)
     form=SelectionAssessmentProfitForm(raw,user=owner)
     if reference:
-        code=reference['snapshot'].currency
+        _,code=reference_money(reference)
         if code not in dict(form.fields['sale_currency'].choices):
             if len(code)==3 and code.isascii() and code.isupper() and code.isalpha():
                 form.fields['sale_currency'].choices=[*form.fields['sale_currency'].choices,(code,code)]
@@ -168,7 +177,15 @@ def save_study(owner, token, name, notes):
     with transaction.atomic():
         get_user_model().objects.select_for_update().get(pk=owner.pk)
         source=payload['scenario']['source']
-        if source:
+        if source and source['kind']=='catalog':
+            # Lock the observation and every mutable row used to establish its source facts.
+            locked=CatalogPriceObservation.objects.select_for_update().filter(pk=source['id']).first()
+            if not locked:raise ValidationError(RECALCULATE)
+            StoreDiscovery.objects.select_for_update().get(pk=locked.discovery_id)
+            StorePriceJob.objects.select_for_update().get(pk=locked.job_id)
+            if source['candidate_id'] is not None:
+                if not CatalogCandidate.objects.select_for_update().filter(pk=source['candidate_id'],owner=owner).exists():raise ValidationError(RECALCULATE)
+        elif source:
             query=Snapshot.all_objects.filter(pk=source['snapshot_id'])
             if source['kind']=='observation':query=query.filter(owner=owner,source='browser')
             else:query=query.filter(owner__isnull=True).exclude(source='browser')
@@ -191,7 +208,7 @@ def study_from_request(request):
     if not values:return None
     if len(values)!=1 or len(values[0])>19 or not values[0].isascii() or not values[0].isdigit() or not 1<=int(values[0])<=9223372036854775807:
         raise ValidationError('测算记录编号无效或重复。')
-    if any(request.GET.getlist(k)+request.POST.getlist(k) for k in ('observation','product')):
+    if any(request.GET.getlist(k)+request.POST.getlist(k) for k in ('observation','product','catalog','candidate')):
         raise ValidationError('测算记录不能与其它报价来源同时使用。')
     if any(name in request.GET for name in ('shipping_mode',*ShippingEstimateForm.base_fields)):
         raise ValidationError('测算记录不能同时带入其它物流参数。')
@@ -202,6 +219,7 @@ def report_link(owner, snapshot):
     try:reference=current_reference(owner,snapshot)
     except ValidationError:return ''
     if not reference:return ''
+    if reference['kind']=='catalog':return catalog_report_link(reference)
     return reverse('browser_report' if reference['kind']=='observation' else 'product_detail',args=[reference['product'].pk])
 
 

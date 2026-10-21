@@ -8,12 +8,13 @@ from django.shortcuts import get_object_or_404
 
 from .forms import ProfitForm
 from .models import Product, Snapshot
+from .catalog_profit_references import resolve_catalog
 
 
 def reference_identifiers(request):
     """A reference is supplied exactly once; GET and POST are not precedence rules."""
     values = {}
-    for name in ('observation', 'product'):
+    for name in ('observation', 'product', 'catalog', 'candidate'):
         supplied = request.GET.getlist(name) + request.POST.getlist(name)
         if len(supplied) > 1:
             raise ValidationError('报价来源编号不能重复，请从报价记录重新打开利润工具。')
@@ -22,13 +23,17 @@ def reference_identifiers(request):
             if not re.fullmatch(r'[1-9][0-9]{0,18}', value, flags=re.ASCII) or int(value) > 9223372036854775807:
                 raise ValidationError('报价来源编号无效，请从报价记录重新打开利润工具。')
             values[name] = int(value)
-    if len(values) > 1:
-        raise ValidationError('不能同时引用浏览器报价与公共商品，请只选择一条来源。')
+    if len(set(values) - {'candidate'}) > 1:
+        raise ValidationError('不能同时引用多条报价来源，请只选择一条来源。')
+    if 'candidate' in values and 'catalog' not in values:
+        raise ValidationError('候选上下文必须与目录报价一起使用。')
     return values
 
 
 def resolve_reference(request):
     ids = reference_identifiers(request)
+    if 'catalog' in ids:
+        return resolve_catalog(request.user, ids['catalog'], ids.get('candidate'))
     if 'observation' in ids:
         snapshot = get_object_or_404(
             Snapshot.all_objects.select_related('product'), pk=ids['observation'],
@@ -49,6 +54,9 @@ def quote_initial(reference):
     """Validate exact money without silently rounding a source into form precision."""
     if not reference:
         return {}, ''
+    if reference['kind'] == 'catalog':
+        row = reference['quote']
+        return {'selling_price': row.price_low, 'sale_currency': row.currency, 'discount_rate': Decimal('0')}, ''
     snapshot = reference['snapshot']
     raw = reference['data'].get('price', snapshot.price)
     try:
@@ -61,3 +69,9 @@ def quote_initial(reference):
     except (ValidationError, InvalidOperation, TypeError, ValueError):
         return {}, '这条报价的金额或币种不能准确带入利润工具（金额最多两位小数且不能超出上限）。未舍入或替换来源；请核对报价，或自行填写假设售价。'
     return {'selling_price': price, 'sale_currency': currency, 'discount_rate': Decimal('0')}, ''
+
+
+def reference_money(reference):
+    if reference['kind'] == 'catalog':
+        return reference['quote'].price_low, reference['quote'].currency
+    return reference['snapshot'].price, reference['snapshot'].currency
