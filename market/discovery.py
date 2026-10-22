@@ -11,6 +11,7 @@ from .validation import clean_url
 from .shopify import normalize_shopify_url
 from .robots_policy import load_robots
 from .adafruit_catalog import is_adafruit_store, normalize_adafruit_product_url
+from .pololu_catalog import is_pololu_store, parse_pololu_home
 
 AGENT = 'ShopHot'
 LIMIT = 100
@@ -37,12 +38,13 @@ def xml_document(data):
 def discover(url, client=None, pause=time.sleep):
     root_url = store_url(url)
     adafruit = is_adafruit_store(root_url)
+    pololu = is_pololu_store(root_url)
     normalize_product = normalize_adafruit_product_url if adafruit else normalize_shopify_url
     own_client = client is None
     client = client or httpx.Client(transport=PublicProductTransport(), timeout=20, trust_env=False, follow_redirects=False,
                                    headers={'User-Agent': 'ShopHot/0.3 (public catalog research)'})
     try:
-        def read(target):
+        def read(target, html=False):
             parts = urlsplit(target)
             if parts.scheme != 'https' or parts.port not in (None, 443) or parts.username or parts.password or parts.hostname != urlsplit(root_url).hostname:
                 raise CollectionError('站点地图指向其他域名，已停止。')
@@ -51,14 +53,28 @@ def discover(url, client=None, pause=time.sleep):
                     raise CollectionError('店铺目录限流，停止发现；请稍后重试。')
                 if response.status_code != 200:
                     raise CollectionError(f'公开目录返回 HTTP {response.status_code}，未保存目录。')
+                if html and 'text/html' not in response.headers.get('content-type', '').lower():
+                    raise CollectionError('店铺首页未返回 HTML，已停止发现。')
                 data = bytearray()
                 for chunk in response.iter_bytes():
                     data.extend(chunk)
                     if len(data) > MAX_BYTES:
                         raise CollectionError('目录响应超过 2 MB，已停止。')
                 return bytes(data)
+        if pololu:
+            pause(12.1)
         rules = load_robots(client, root_url, AGENT)
-        delay = max(rules.delay, 12.1) if adafruit else rules.delay
+        delay = max(rules.delay, 12.1) if adafruit or pololu else rules.delay
+        if pololu:
+            target = root_url + '/'
+            if not rules.can_fetch(target):
+                raise CollectionError('robots.txt 不允许读取该店铺首页。')
+            pause(delay)
+            result = parse_pololu_home(read(target, html=True), root=root_url)
+            result['products'] = [item for item in result['products'] if rules.can_fetch(item['url'])]
+            if not result['products']:
+                raise CollectionError('店铺首页没有允许读取的规范商品链接。')
+            return result
         def sitemap(target):
             if not rules.can_fetch(target):
                 raise CollectionError('robots.txt 不允许读取该站点地图。')

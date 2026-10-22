@@ -1,6 +1,7 @@
 {% extends 'market/base.html' %}{% load static tz %}
 {% block title %}竞品店铺报告 · ShopHot{% endblock %}
 {% block content %}
+{% if scan.url == "https://www.pololu.com" %}<p class="notice">仅发现首页展示的有限商品链接，不代表全店。报价固定为数量 1 的 USD 单件价，不计批量折扣；库存数量、运费及税费未知，来源 InStock 标注不保证现货或履约。</p>{% endif %}
 <div class="heading"><div><p class="eyebrow">COMPETITOR REPORT</p><h1>店铺分析报告</h1><p class="muted">{{ scan.url|default:"从公开商品目录开始研究" }}</p></div><a class="button secondary" href="{% url 'stores' %}">返回店铺研究</a></div>
 {% if scan %}
 {% include 'market/partials/catalog_coverage.html' %}
