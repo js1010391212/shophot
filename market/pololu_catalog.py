@@ -108,7 +108,7 @@ def parse_pololu_price(html, target):
              'Pololu 商品名称不完整。')
     title = ' '.join(title.split())
     _require(_text(_one(soup, 'h1#page_title')) == title
-             and _text(_one(soup, 'title')) == 'Pololu - ' + title,
+             and _text(_one(soup, 'title')) in (title, 'Pololu - ' + title),
              'Pololu 商品名称证据不一致。')
     area = _one(soup, '.order_form_with_price_notification')
     identity = _one(area, '.part_number_and_stock')
