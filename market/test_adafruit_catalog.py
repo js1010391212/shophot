@@ -53,6 +53,23 @@ def changed_dom(edit):
     return str(soup)
 
 
+def revision_page(suffix='v1.1'):
+    """Controlled version of the corroborated source title convention."""
+    soup = BeautifulSoup(page(), 'html.parser')
+    soup.select_one('.meta_pid_boxes').decompose()
+    soup.select_one('label').decompose()
+    for header in soup.select('h1'):
+        header.string = 'Controlled Board - ' + suffix
+    title = soup.new_tag('title')
+    title.string = ('Controlled Board [' + suffix + '] : Adafruit Industries, '
+                    'Unique & fun DIY electronics and kits')
+    soup.append(title)
+    for key, value in (('property', 'og:title'), ('name', 'twitter:title')):
+        meta = soup.new_tag('meta', attrs={key: value, 'content': 'Controlled Board'})
+        soup.append(meta)
+    return str(soup)
+
+
 class AdafruitCatalogTests(SimpleTestCase):
     def rejects(self, html, target=URL):
         with self.assertRaises(CollectionError):
@@ -195,3 +212,81 @@ class AdafruitCatalogTests(SimpleTestCase):
         self.rejects(b' ' * (MAX_BYTES + 1))
         self.rejects(None)
         self.rejects(page(), URL + '?currency=USD')
+
+    def test_corroborated_revision_keeps_full_visible_name_and_sku(self):
+        for suffix in ('v1.1', 'V 2.1a', 'v3.0', 'FT232RL'):
+            with self.subTest(suffix=suffix):
+                result = parse_adafruit_price(revision_page(suffix), URL)
+                self.assertEqual(result['price_title'], 'Controlled Board - ' + suffix)
+                self.assertEqual(result['variants'][0]['name'], result['price_title'])
+                self.assertEqual((result['sku'], result['price_low'], result['currency']),
+                                 ('4864', '4.00', 'USD'))
+
+    def test_revision_prefix_alone_or_missing_corroboration_rejected(self):
+        for selector in ('title', 'meta[property="og:title"]', 'meta[name="twitter:title"]',
+                         '.mobile-product-header h1'):
+            soup = BeautifulSoup(revision_page(), 'html.parser')
+            soup.select_one(selector).decompose()
+            self.rejects(str(soup))
+        self.rejects(revision_page('Different product'))
+        self.rejects(revision_page('v1.1 - Another board'))
+
+    def test_revision_conflicting_metadata_or_mobile_still_rejected(self):
+        for selector in ('meta[property="og:title"]', 'meta[name="twitter:title"]'):
+            soup = BeautifulSoup(revision_page(), 'html.parser')
+            soup.select_one(selector)['content'] = 'Other Board'
+            self.rejects(str(soup))
+        for selector in ('title', '.mobile-product-header h1'):
+            soup = BeautifulSoup(revision_page(), 'html.parser')
+            soup.select_one(selector).string = 'Controlled Board - v9.9'
+            self.rejects(str(soup))
+        self.rejects(revision_page() + '<title>Conflicting title</title>')
+
+    def test_revision_does_not_relax_identity_currency_or_price(self):
+        html = revision_page()
+        self.rejects(html, ROOT + '/product/4883')
+        self.rejects(html.replace('"sku": 4864', '"sku": 4883'))
+        self.rejects(html.replace('https://adafruit.com/product/4864',
+                                  'https://adafruit.com.evil.example/product/4864'))
+        self.rejects(html.replace('USD', 'EUR'))
+        self.rejects(html.replace('"price": 4', '"price": 9'))
+
+    def test_discontinued_requires_matching_explicit_visible_status(self):
+        html = revision_page().replace('schema.org/OutOfStock', 'schema.org/Discontinued')
+        html = html.replace('Out of stock', 'No longer stocked')
+        result = parse_adafruit_price(html, URL)
+        self.assertEqual(result['availability'], 'Discontinued')
+        self.assertEqual(result['variants'][0]['availability'], 'Discontinued')
+        self.assertEqual(result['price_low'], '4.00')
+        self.rejects(html.replace('No longer stocked', 'In stock'))
+        self.rejects(html.replace('schema.org/Discontinued', 'schema.org/InStock'))
+        self.rejects(html.replace('schema.org/Discontinued', 'schema.org/Unknown'))
+
+    def test_out_of_stock_schema_and_in_stock_dom_remain_conflict(self):
+        soup = BeautifulSoup(page(), 'html.parser')
+        soup.select_one('#prod-stock [itemprop=availability]').string = 'In stock'
+        self.rejects(str(soup))
+
+    def test_revision_does_not_bypass_unselected_part_picker(self):
+        soup = BeautifulSoup(revision_page(), 'html.parser')
+        picker = BeautifulSoup('<select name="part_id"><option value="4864">Choose color</option>'
+                               '<option value="4883">Blue ($9.00)</option></select>', 'html.parser').select_one('select')
+        soup.select_one('#prod-right-side').append(picker)
+        with self.assertRaisesMessage(CollectionError, '尚未支持的版本选择控件'):
+            parse_adafruit_price(str(soup), URL)
+
+    def test_revision_does_not_bypass_wrong_selected_sku(self):
+        soup = BeautifulSoup(revision_page(), 'html.parser')
+        widget = BeautifulSoup(page(), 'html.parser').select_one('.meta_pid_boxes')
+        widget.select_one('li.ui-selected')['data-part-id'] = '4883'
+        soup.select_one('#prod-stock').append(widget)
+        with self.assertRaisesMessage(CollectionError, '选中版本与目标商品或 SKU 不一致'):
+            parse_adafruit_price(str(soup), URL)
+
+    def test_discontinued_selected_version_also_needs_matching_status(self):
+        html = page().replace('schema.org/OutOfStock', 'schema.org/Discontinued')
+        html = html.replace('Out of stock', 'No longer stocked')
+        self.assertEqual(parse_adafruit_price(html, URL)['availability'], 'Discontinued')
+        soup = BeautifulSoup(html, 'html.parser')
+        soup.select_one('li.ui-selected .option_meta').string = 'Out of stock'
+        self.rejects(str(soup))

@@ -104,6 +104,31 @@ def _visible_amount(node):
     return _amount(value[1:].replace(',', ''))
 
 
+def _visible_title(soup, main, schema_title):
+    visible = _text(_one(main, 'h1.products_name'))
+    if visible == schema_title:
+        return visible
+    # Verified source convention: the page title places a revision/model in
+    # brackets, while both visible headers append it after a hyphen. Never
+    # accept an arbitrary shared prefix or silently remove the revision.
+    prefix = schema_title + ' - '
+    _require(visible.startswith(prefix), '主商品名称与结构化数据冲突。')
+    suffix = visible[len(prefix):]
+    _require(bool(re.fullmatch(r'(?:[vV] ?[0-9]+(?:\.[0-9]+){1,2}[a-z]?|FT232RL)', suffix)),
+             '商品名称后缀不是已验证的版本表达。')
+    expected = (schema_title + ' [' + suffix + '] : Adafruit Industries, '
+                'Unique & fun DIY electronics and kits')
+    _require(_text(_one(soup, 'title')) == expected,
+             '商品版本缺少一致的页面标题证据。')
+    _require(_text(_one(soup, '.mobile-product-header h1')) == visible,
+             '移动端商品版本名称冲突。')
+    for selector in ('meta[property="og:title"]', 'meta[name="twitter:title"]'):
+        _require(_one(soup, selector).get('content') == schema_title,
+                 '商品基础名称的元数据证据冲突。')
+    _require(len(visible) <= 300, '完整商品版本名称过长。')
+    return visible
+
+
 def _selected_version(soup, main, pid, title, availability, amount):
     widgets = soup.select('.meta_pid_boxes')
     _require(not main.select('select, .variant-picker, input[type="radio"]'),
@@ -128,8 +153,9 @@ def _selected_version(soup, main, pid, title, availability, amount):
         name = _text(_one(item, '.option_name'))
         _require(bool(name) and len(name) <= 300, '选中版本名称不完整。')
         state = _text(_one(item, '.option_meta')).lower()
-        if availability == 'OutOfStock':
-            _require(state == 'out of stock', '选中版本库存状态与主报价冲突。')
+        if availability in ('OutOfStock', 'Discontinued'):
+            expected = {'OutOfStock': 'out of stock', 'Discontinued': 'no longer stocked'}
+            _require(state == expected[availability], '选中版本库存状态与主报价冲突。')
         else:
             _require(state == 'in stock' or _visible_amount(_one(item, '.option_meta')) == amount,
                      '选中版本价格或库存状态与主报价冲突。')
@@ -165,7 +191,7 @@ def parse_adafruit_price(html, target):
              '商品名称不完整。')
     title = ' '.join(title.split())
     main = _one(soup, '#prod-right-side')
-    _require(_text(_one(main, 'h1.products_name')) == title, '主商品名称与结构化数据冲突。')
+    title = _visible_title(soup, main, title)
     ids = soup.select('.product_id span')
     _require(bool(ids) and all(_text(span) == pid for span in ids)
              and bool(main.select('.product_id span')), '可见商品 PID 与显式 SKU 不一致。')
@@ -199,12 +225,14 @@ def parse_adafruit_price(html, target):
     for mobile in soup.select('.mobile-product-header .product-price'):
         _require(_visible_amount(mobile) == amount, '移动端主价格与报价冲突。')
     state = offer.get('availability')
+    labels = {'InStock': 'in stock', 'OutOfStock': 'out of stock',
+              'Discontinued': 'no longer stocked'}
     states = {scheme + '://schema.org/' + value: value
-              for scheme in ('http', 'https') for value in ('InStock', 'OutOfStock')}
+              for scheme in ('http', 'https') for value in labels}
     _require(isinstance(state, str) and state in states, '缺少已验证的明确库存状态。')
     availability = states[state]
     visible_state = _text(_one(main, '#prod-stock [itemprop="availability"]')).lower()
-    _require(visible_state == {'InStock': 'in stock', 'OutOfStock': 'out of stock'}[availability],
+    _require(visible_state == labels[availability],
              '可见库存状态与结构化报价冲突。')
     version = _selected_version(soup, main, pid, title, availability, amount)
     value = str(amount)

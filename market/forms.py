@@ -231,7 +231,7 @@ class StoreDiscoveryForm(forms.Form):
 
 class ResearchFilterForm(forms.Form):
     availability = forms.ChoiceField(label='公开库存状态', required=False, choices=[
-        ('','全部状态'),('InStock','有货'),('OutOfStock','缺货'),('SoldOut','售罄'),
+        ('','全部状态'),('InStock','有货'),('OutOfStock','缺货'),('SoldOut','售罄'),('Discontinued','停止供应'),
         ('PreOrder','预售'),('BackOrder','可延期订购'),('Mixed','不同规格状态不同'),('unknown','未知')])
     coverage = forms.ChoiceField(label='数据覆盖', required=False, choices=[
         ('','全部商品'),('quoted','有有效报价'),('unquoted','报价未知'),

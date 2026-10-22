@@ -8,7 +8,7 @@ from .validation import clean_rating, clean_count
 from .review_analysis import analyze_reviews
 from .catalog_coverage import quote_values, valid_currency
 
-AVAILABILITY = {'InStock':'有货','OutOfStock':'缺货','SoldOut':'售罄',
+AVAILABILITY = {'InStock':'有货','OutOfStock':'缺货','SoldOut':'售罄','Discontinued':'停止供应',
                 'PreOrder':'预售','BackOrder':'可延期订购','Mixed':'不同规格状态不同'}
 
 STOP_WORDS = set('a an and are as at be by for from in is it of on or the to with your our new'.split())

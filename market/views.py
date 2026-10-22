@@ -380,6 +380,20 @@ def keyword_research(request, pk=None):
         'price_job_active':scan.price_jobs.filter(status__in=['queued','running']).exists()})
 
 
+def _catalog_facts_only(scan, item):
+    """Display scope is known before a quote succeeds; never amend stored facts."""
+    from .adafruit_catalog import is_adafruit_store, normalize_adafruit_product_url
+    if item.get('content_policy') == 'facts_only':
+        return True
+    if not is_adafruit_store(scan.url):
+        return False
+    try:
+        normalize_adafruit_product_url(item.get('url'))
+    except ValidationError:
+        return False
+    return True
+
+
 @login_required
 def catalog_detail(request, pk, index):
     from django.http import Http404
@@ -396,7 +410,7 @@ def catalog_detail(request, pk, index):
         candidate=None
     job = next((job for job in scan.price_jobs.all()[:20]
                 if index in (job.indices or list(range(min(len(scan.products), 10))))), None)
-    context = {'scan': scan, 'item': item, 'index': index, 'job': job, 'candidate':candidate, 'review_analysis':analyze_reviews(item),
+    context = {'scan': scan, 'item': item, 'index': index, 'job': job, 'candidate':candidate, 'facts_only': _catalog_facts_only(scan, item), 'review_analysis':analyze_reviews(item),
         'title': item.get('price_title') or item.get('title'),
         'terms': sorted(title_terms(item.get('price_title') or item.get('title') or '', scan.url)),
         'has_rating': item.get('rating') not in (None, ''),
@@ -419,7 +433,10 @@ def refresh_catalog_product(request, pk, index):
             if index >= len(scan.products):
                 raise Http404('目录中没有此商品。')
             StorePriceJob.objects.create(discovery=scan, indices=[index], total=1)
-        messages.success(request, '当前商品已排队更新：报价、图片、描述、公开规格及可取得的商品评价。请稍后刷新页面。')
+        if _catalog_facts_only(scan, scan.products[index]):
+            messages.success(request, '当前商品已排队更新：仅核验身份、所选规格、价格、币种与库存标注，不保存图片、描述或评论。请稍后刷新页面。')
+        else:
+            messages.success(request, '当前商品已排队更新：报价、图片、描述、公开规格及可取得的商品评价。请稍后刷新页面。')
     except IntegrityError:
         messages.info(request, '这个店铺已有采集任务，请等它完成后再更新。')
     return redirect('catalog_detail', pk=pk, index=index)
