@@ -1,0 +1,7 @@
+.catalog-coverage{min-width:0;overflow-wrap:anywhere}
+.catalog-coverage h2{margin-top:0}
+.coverage-counts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;margin:1rem 0}
+.coverage-counts div{min-width:0;border-left:3px solid #d9e4ec;padding-left:.8rem}
+.coverage-counts dt{font-size:.85rem;color:#526174}
+.coverage-counts dd{margin:.35rem 0 0;font-size:1.4rem;font-weight:650}
+@media(max-width:680px){.coverage-counts{grid-template-columns:repeat(2,minmax(0,1fr))}.coverage-counts dd{font-size:1.1rem}}

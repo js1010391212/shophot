@@ -6,24 +6,30 @@ from .candidates import candidate_url
 from django.core.exceptions import ValidationError
 
 
-def start_store_analysis(url, refresh=False):
+def start_store_analysis(url, refresh=False, *, include_prices=None):
+    want_prices = include_prices is not False
+    explicit_upgrade = include_prices is True
     try:
         with transaction.atomic():
             active=StoreDiscovery.objects.select_for_update().filter(url=url,status__in=['queued','running']).first()
             if active:
-                active.analyze_prices=True
-                active.save(update_fields=['analyze_prices'])
+                if want_prices and not active.analyze_prices:
+                    active.analyze_prices=True
+                    active.save(update_fields=['analyze_prices'])
                 return active
             if not refresh:
                 saved=StoreDiscovery.objects.filter(url=url,status='succeeded').first()
-                if saved:
+                if saved and (not explicit_upgrade or saved.analyze_prices or saved.price_jobs.exists()):
                     return saved
+                # A POST asking for prices may upgrade a completed directory-only
+                # result by creating a new task; the saved directory stays intact.
             # 条件唯一约束防并发；外层调用发生冲突时复用已入队任务。
-            return StoreDiscovery.objects.create(url=url,analyze_prices=True)
+            return StoreDiscovery.objects.create(url=url,analyze_prices=want_prices)
     except IntegrityError:
         active=StoreDiscovery.objects.filter(url=url,status__in=['queued','running']).first()
         if active:
-            StoreDiscovery.objects.filter(pk=active.pk).update(analyze_prices=True)
+            if want_prices:
+                StoreDiscovery.objects.filter(pk=active.pk).update(analyze_prices=True)
             return active
         raise
 

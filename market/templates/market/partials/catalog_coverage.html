@@ -1,0 +1,16 @@
+{% load static tz %}<link rel="stylesheet" href="{% static 'market/catalog_coverage.css' %}?v=1">
+<section class="card catalog-coverage" aria-label="本次报告数据覆盖">
+<h2>{% if report_coverage.catalog_only %}公开商品目录分析{% else %}{{ report_coverage.title }}{% endif %}</h2>
+{% if report_coverage.catalog_only %}<p class="notice">本次选择仅目录分析：读取公开商品清单，不请求商品详情或报价；价格、币种、规格、库存和销量尚未确认。</p>{% endif %}
+{% if report_coverage.attribution %}<p class="muted">来源归属：{{ report_coverage.attribution.creator }} · <a href="{{ report_coverage.attribution.policy }}" target="_blank" rel="noopener noreferrer">版权说明</a> · <a href="{{ report_coverage.attribution.license_url }}" target="_blank" rel="noopener noreferrer">{{ report_coverage.attribution.license }}</a>（仅其原创内容；不推定第三方素材或商标获授权）。</p>{% endif %}
+<p class="coverage-address">公开来源：<a href="{{ report_coverage.store_url }}" target="_blank" rel="noopener noreferrer">{{ report_coverage.store_url }} ↗</a></p>
+<p>目录观测：{% if report_coverage.directory_observed_at %}{{ report_coverage.directory_observed_at|timezone:'Asia/Shanghai'|date:'Y-m-d H:i:s' }}（北京时间）{% else %}完成时间未记录{% endif %}。当前查看已保存结果，打开报告不会重新采集。</p>
+{% if report_coverage.limited %}<p class="notice warning">目录已截断：仅覆盖本次取得的有限商品链接，不是全店商品总数；未覆盖部分未知。</p>{% endif %}
+<dl class="coverage-counts"><div><dt>本目录去重商品链接</dt><dd>{{ report_coverage.total_count }}</dd></div><div><dt>本批新取得有效报价</dt><dd>{{ report_coverage.new_count }}</dd></div><div><dt>本批明确失败记录</dt><dd>{% if report_coverage.failed_count %}{{ report_coverage.failed_count }}{% else %}暂无已确认记录{% endif %}</dd></div><div><dt>沿用已保存报价</dt><dd>{{ report_coverage.historical_count }}</dd></div></dl>
+<p>当前可展示有效报价 {{ report_coverage.quoted_count }} / {{ report_coverage.total_count }} 件；{{ report_coverage.unquoted_count }} 件无有效报价。历史沿用不计入本批新取得。</p>
+{% if report_coverage.job %}<p role="status">最近报价批次：{{ report_coverage.job.get_status_display }}。{% if report_coverage.scope_known %}本批安排 {{ report_coverage.planned_count }} 件；未安排本批 {{ report_coverage.not_scheduled_count }} 件。{% else %}任务商品范围无法核对。{% endif %}已处理 {{ report_coverage.job.processed }} / {{ report_coverage.job.total }}，处理数不等于报价成功数。</p>
+{% if report_coverage.unresolved_count %}<p class="notice warning">本批仍有 {{ report_coverage.unresolved_count }} 件待处理或逐项结果未记录；中断获取可能未留下结果，不能据此认定“未请求”或“全部失败”。</p>{% endif %}
+{% if report_coverage.job.message %}<p>批次说明：{{ report_coverage.job.message }}</p>{% endif %}
+{% else %}<p>这个目录尚无报价任务；已有报价仅按原保存时间展示，不代表本次新获取。</p>{% endif %}
+<p class="muted">报价按原币种与规格范围展示，税费、运费及结账优惠未确认；未知值不补零。单次观测不代表趋势、销量或上下架；站点地图更新时间不是上架日期。</p>
+</section>
