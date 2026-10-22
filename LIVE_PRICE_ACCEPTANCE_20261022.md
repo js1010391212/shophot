@@ -38,4 +38,6 @@ review克隆.local/live-web-price-source/LIVE_WEB_PRICE_RECEIPT.json、01–13.b
 
 ## 发布回执
 
-最终业务集成、独立增量审查、变更后650项及实际UI通过；当前准备更新准确PR31 tree/CI，远端发布收据另存。本地原服务当前仍PR30业务，尚未启用本候选；不提前宣称已合并或GA。44b99b5和所有旧分支/clone/WIP/凭据保留。
+PR31已合并main/origin8c491e5289375b7f4ec39f2ff09805e8d98c41b3；发布headfc39baecd8e1f36b1eb6c991566ccfb866fe37fd，CI39779402616成功；tree edc37124372ce29df883d189115d0eed426a8c6e与review交付7233c97全树相同。根以正常merge保留全部本地/远端历史至e202f5f，启用时全树一致；本段与交接为之后仅本机运维文档更新未推送。
+
+负责人标准完整冷启动已加载同业务源：session45727/主管31938/web31950/唯一worker31954，旧3010/3021/3025均退出；迁移无新/check清，登录200CSRF、匿名guide与私有比较302。主库21表268行前后强制只读全表指纹完全相同，没有主库QA/新管理员或原凭据读取。准确收据.local/price-release-20261022。候选范围仅上述有界真实店铺流程，不等于全店价格覆盖、来源持续可用、商业GA或许可保证；原44b99b5/所有旧成果保留。
