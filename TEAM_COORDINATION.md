@@ -1,3 +1,27 @@
+> 2026-10-22 价格首里程碑发布前验收通过：最终业务8c733ad7098dc338022c74f07fc2bbdf195734ed，原High C618fe96+审查文档cff974、原Medium D2695/Eb3a83独立交叉审查无可复现P1/P2；最终随机隔离PG650项106.322秒无skip、库清理、check/迁移/diff清。实站原13应用GET/100有限目录/2条price+SKU的输入→报告已真实，恢复后只用保存原数据完成SKU详情、候选成功/失败、桌面/390/价格图/空筛选/范围约束验收；原2观测/13响应不变。离线解析6接受/4拒绝不是新观测，未选规格/真实库存冲突继续拒绝。停止供应展示接线已完成；QA自己的tab退出关闭/viewportreset，8007PID29049核cwd命令TERM；有一个隔离queued刷新scan2保留未跑，无新HTTP。PR31仍待准确上传/CI/合并，主服务仍旧PR30业务未重启，绝不提前称远端/本机新源启用。详LIVE_PRICE_ACCEPTANCE/ADAFRUIT_OFFLINE_DIAGNOSIS/PRICE_HTML_D_UI/PRICE_HTML_E_REVIEW，私有UI_FINAL_RECEIPT/PRICE_PG_RECEIPT_20261022T122931等。两队完成停止，原44b99b5/旧成果/凭据全部保留。
+
+> 2026-10-22 恢复 PRICE-HTML-C/D：PR31仍草稿，review586ed523保持。原High仅在新独立clone离线核保存13份传输原始body（gzip解压后robots/sitemap与PhaseA相同），诊断8拒绝并最小源专用修复/专项；原Medium独立clone仅修已发现Adafruit失败/空项目facts_only展示范围，不碰High文件。负责人已实际补验原保存两条报价的SKU详情、390手机/价格分布/空筛选/有效与失败候选；源13响应hash和2观测不变。QA误触产生隔离scan2 queued、无worker/新外部HTTP、保留证据，非当前实站新数据；UI_RESUME_RECEIPT记录。QA8007已核cwd/命令TERM停，自己tab退出关闭/viewportreset。两队不接触主库/原凭据，负责人协调集成、增量验收与准确PR31发布；不重复634全套。
+
+## 2026-10-22 额度3%：PRICE-HTML-B停止保存，候选已上传
+
+> 2026-10-22 额度3%停止，已按用户要求上传候选并清理：PR30已合并main36184b9；PR31 https://github.com/js1010391212/shophot/pull/31 是草稿，head4b7890bf41346367a27bd1647fb96ce7059caf6d/tree3887dd66561c84f104498018b0251a38ff74ca14与隔离review候选586ed523d65cbabc3b7d1c8bb1eef264d2bfc2b7全树相同，CI39742718306成功，未合并/未启用主服务。High PhaseA4a3e6ee、适配7e17c694；Medium集成0867a0ca（126专项无skip）；负责人独立review代码/最少UI文案4b43f0a，业务462bfbd，最终隔离PG634项107.202秒无skip，随机库清理；初634有3个测试cookie设置错误，旧日志保留，修复仅PG测试配置，UI专用cookie保持。真实普通QA空SQLite首页输入Adafruit→原worker新联网13应用GET→100有限目录/默认批10→2条真实price+SKU（/product/9 USD2.50和/product/16 USD2.00）自动报告，另8条被严格名称/库存交叉核验拒绝，未追加4864/导入旧样本/请求API。三方库存/市场/数量税运优惠未知，不以0替代。真实报告截图与原始13响应/状态/哈希、SKU scopes、PG日志和准确STOP_DELIVERY_RECEIPT均在.local/live-prices-review-20261022/.local/（0600）。两原队完成停止；QA8007核cwd/命令TERM停、浏览器已退出关闭，无常驻QAworker；main原服务/主库/原账号凭据本轮未动，主网站不随额度停。当前root只合入来源文档至4a8f06f，不含新业务适配，所有旧历史/44b99b5保留。恢复后不重跑未变634全套/不重取当前HTML：先离线诊断保存的8个名称/库存拒绝，再按实际必要修复/专项；继续详情SKU/移动端/失败与候选实际验收，完成后再将准确候选PR31转正式审查合并和统一冷启。当前完整新数据能力未最终验收，不称全店支持或GA。
+
+## 2026-10-22 新来源已实证，最小HTML适配阶段B
+
+负责人已只读核High原始收据：Adafruit规范商品HTML/product/4864于07:05UTC 200，4.00 USD、明确商家SKU4864/所选Pico without Headers、OutOfStock；07:11UTC HTTPS官方sitemap200、6396链接/1204160字节。API被robots排除，0API请求，HTML用途仅本机最少事实研究；不复制图片/描述，不宣称商业再分发或法律保证，数量阶梯/税运/市场/优惠未知。原通用parser因身份严格拒绝，保留其保护。PhaseA来源说明/收据冻结后做阶段B：
+
+- High独占新增`market/adafruit_catalog.py`/`market/test_adafruit_catalog.py`及来源说明，纯解析与该来源严格URL规范化；函数契约`is_adafruit_store(root)`、`normalize_adafruit_product_url(value)`、`parse_adafruit_price(html,target)`。不导入discovery/catalog_prices，不改共享解析器/模型/worker/路由/transport，不再HTTP；非www Offer仅固定来源离线证据，不扩大实际可请求host。
+- Medium独占`market/discovery.py`、`market/catalog_prices.py`必要薄分派和新`market/test_adafruit_integration.py`：只规范www.adafruit.com店铺启用来源normalizer/parser，原Shopify行为保持；目录原sitemap/100上限、报价原10上限、原安全transport/robots/2MB/不重定向/非200停止保持，来源delay至少12.1秒。等待High准确模块后再做真实模块受控回归，禁止stub冒充已集成；无model/路由/worker/利润/API新能力，无UI重构。
+- 负责人最终独立审查、随机隔离回归与普通用户实际输入→目录→报价→报告/规格验收。新样本不等于产品接通；本机主库和服务不变，所有新QA显式隔离/普通账号。Low库存/缺货不是可购买保证；目录截断不当全量。Medium此前只读审查1774725已正常快进保留，旧成果/凭据不动。
+
+## 2026-10-22 PR30合并后：真实价格/SKU来源任务
+
+发布已完成：main36184b9、CI39736138157成功，全树与c2948e4一致；根正常保留合并06a8a098e62e1b771ba89c5b171286e497c3e367。原两队此前完成停止已核，现按用户新授权派新有界任务，模型保持。
+
+- 原High：独立`.local/live-prices-source-20261022` / `codex/live-prices-source-20261022`，基线本条提交。仅新来源合法访问/价格/SKU真实实证及私有收据、新独立来源文档；先官方许可/公开API用途与robots，最多2个新候选，优先可复用当前公开链路。Adafruit官方产品API可作为新线索，不能预认许可；不重试EFF/旧被拒资源，不改网络/认证/身份/工具来绕拒绝。不碰根/主PG/共享源码，取到样本后先交负责人契约，再授权最小接线。
+- 原Medium：独立`.local/live-prices-reuse-20261022` / `codex/live-prices-reuse-20261022`，同基线。只读盘点现有目录→报价观测→SKU/规格/币种→竞品报告契约，特别多规格不冒充SKU精确价；交最小缺口/复用建议，不开发依赖未验证来源的新系统，不重复旧覆盖/范围P2审查、全套或浏览器验收。High真实样本到后才分配必要代码。
+- 负责人：独占根共享交接/模型路由worker及最终合并、质量验收/实际UI。无ERP/收费/无关UI，原账号/凭据不读不动、业务库无QA写入。额度≤5%先简报保存停止，网站保持。
+
 ## 2026-10-22 本机目录范围交付完成，待远端发布
 
 原High73fe10d与Medium5bb6179/负责人d702e53增量审查均停止。负责人607PG无skip及实际45条新目录Web/1280/390验收通过，根0c7fe9b已标准冷启，主管3010/web3021/唯一worker3025，主库21表268行前后指纹相同，QA8006已停。范围仅真实目录与标题分析；商品HTML/报价429未通过，完整里程碑不称完成。恢复先做精确PR/CI/远端合并的有界收尾，不重派开发、不重复采集被拒资源/全套。

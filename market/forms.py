@@ -170,7 +170,7 @@ class AnalyzeForm(forms.Form):
             self.fields['platform'].choices = [('Auto', '自动识别链接')] + list(self.fields['platform'].choices)
             self.fields['platform'].initial = 'Auto'
             self.fields['scope'] = forms.ChoiceField(label='店铺分析范围', required=False, initial='prices', choices=[('prices','目录与公开报价'),('catalog','仅目录分析，不请求商品详情')])
-            self.fields['url'].label = '竞品商品或 Shopify 店铺链接'
+            self.fields['url'].label = '竞品商品或支持的店铺首页'
             self.fields['url'].widget.attrs['placeholder'] = 'https://店铺域名/ 或完整商品链接'
 
     def clean_url(self):
@@ -221,7 +221,7 @@ class AnalyzeForm(forms.Form):
 
 class StoreDiscoveryForm(forms.Form):
     scope = forms.ChoiceField(label='店铺分析范围', required=False, widget=forms.HiddenInput, choices=[('prices','目录与公开报价'),('catalog','仅目录分析')])
-    url = forms.URLField(label='Shopify 店铺首页', max_length=500,
+    url = forms.URLField(label='店铺首页', max_length=500,
                          widget=forms.URLInput(attrs={'placeholder': 'https://example.com'}))
 
     def clean_url(self):
@@ -231,7 +231,7 @@ class StoreDiscoveryForm(forms.Form):
 
 class ResearchFilterForm(forms.Form):
     availability = forms.ChoiceField(label='公开库存状态', required=False, choices=[
-        ('','全部状态'),('InStock','有货'),('OutOfStock','缺货'),('SoldOut','售罄'),
+        ('','全部状态'),('InStock','有货'),('OutOfStock','缺货'),('SoldOut','售罄'),('Discontinued','停止供应'),
         ('PreOrder','预售'),('BackOrder','可延期订购'),('Mixed','不同规格状态不同'),('unknown','未知')])
     coverage = forms.ChoiceField(label='数据覆盖', required=False, choices=[
         ('','全部商品'),('quoted','有有效报价'),('unquoted','报价未知'),

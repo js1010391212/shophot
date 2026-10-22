@@ -10,6 +10,7 @@ from .network import PublicProductTransport
 from .validation import clean_url
 from .shopify import normalize_shopify_url
 from .robots_policy import load_robots
+from .adafruit_catalog import is_adafruit_store, normalize_adafruit_product_url
 
 AGENT = 'ShopHot'
 LIMIT = 100
@@ -35,6 +36,8 @@ def xml_document(data):
 
 def discover(url, client=None, pause=time.sleep):
     root_url = store_url(url)
+    adafruit = is_adafruit_store(root_url)
+    normalize_product = normalize_adafruit_product_url if adafruit else normalize_shopify_url
     own_client = client is None
     client = client or httpx.Client(transport=PublicProductTransport(), timeout=20, trust_env=False, follow_redirects=False,
                                    headers={'User-Agent': 'ShopHot/0.3 (public catalog research)'})
@@ -55,7 +58,7 @@ def discover(url, client=None, pause=time.sleep):
                         raise CollectionError('目录响应超过 2 MB，已停止。')
                 return bytes(data)
         rules = load_robots(client, root_url, AGENT)
-        delay = rules.delay
+        delay = max(rules.delay, 12.1) if adafruit else rules.delay
         def sitemap(target):
             if not rules.can_fetch(target):
                 raise CollectionError('robots.txt 不允许读取该站点地图。')
@@ -82,7 +85,7 @@ def discover(url, client=None, pause=time.sleep):
                 if urlsplit(location).hostname != urlsplit(root_url).hostname or not rules.can_fetch(location):
                     continue
                 try:
-                    normalized = normalize_shopify_url(location)
+                    normalized = normalize_product(location)
                 except ValidationError:
                     continue
                 if normalized in products:

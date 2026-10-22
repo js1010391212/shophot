@@ -1,3 +1,13 @@
+> 2026-10-22 价格首里程碑发布前验收通过：最终业务8c733ad7098dc338022c74f07fc2bbdf195734ed，原High C618fe96+审查文档cff974、原Medium D2695/Eb3a83独立交叉审查无可复现P1/P2；最终随机隔离PG650项106.322秒无skip、库清理、check/迁移/diff清。实站原13应用GET/100有限目录/2条price+SKU的输入→报告已真实，恢复后只用保存原数据完成SKU详情、候选成功/失败、桌面/390/价格图/空筛选/范围约束验收；原2观测/13响应不变。离线解析6接受/4拒绝不是新观测，未选规格/真实库存冲突继续拒绝。停止供应展示接线已完成；QA自己的tab退出关闭/viewportreset，8007PID29049核cwd命令TERM；有一个隔离queued刷新scan2保留未跑，无新HTTP。PR31仍待准确上传/CI/合并，主服务仍旧PR30业务未重启，绝不提前称远端/本机新源启用。详LIVE_PRICE_ACCEPTANCE/ADAFRUIT_OFFLINE_DIAGNOSIS/PRICE_HTML_D_UI/PRICE_HTML_E_REVIEW，私有UI_FINAL_RECEIPT/PRICE_PG_RECEIPT_20261022T122931等。两队完成停止，原44b99b5/旧成果/凭据全部保留。
+
+> 2026-10-22 恢复 PRICE-HTML-C/D：PR31仍草稿，review586ed523保持。原High仅在新独立clone离线核保存13份传输原始body（gzip解压后robots/sitemap与PhaseA相同），诊断8拒绝并最小源专用修复/专项；原Medium独立clone仅修已发现Adafruit失败/空项目facts_only展示范围，不碰High文件。负责人已实际补验原保存两条报价的SKU详情、390手机/价格分布/空筛选/有效与失败候选；源13响应hash和2观测不变。QA误触产生隔离scan2 queued、无worker/新外部HTTP、保留证据，非当前实站新数据；UI_RESUME_RECEIPT记录。QA8007已核cwd/命令TERM停，自己tab退出关闭/viewportreset。两队不接触主库/原凭据，负责人协调集成、增量验收与准确PR31发布；不重复634全套。
+
+> 2026-10-22 额度3%停止，已按用户要求上传候选并清理：PR30已合并main36184b9；PR31 https://github.com/js1010391212/shophot/pull/31 是草稿，head4b7890bf41346367a27bd1647fb96ce7059caf6d/tree3887dd66561c84f104498018b0251a38ff74ca14与隔离review候选586ed523d65cbabc3b7d1c8bb1eef264d2bfc2b7全树相同，CI39742718306成功，未合并/未启用主服务。High PhaseA4a3e6ee、适配7e17c694；Medium集成0867a0ca（126专项无skip）；负责人独立review代码/最少UI文案4b43f0a，业务462bfbd，最终隔离PG634项107.202秒无skip，随机库清理；初634有3个测试cookie设置错误，旧日志保留，修复仅PG测试配置，UI专用cookie保持。真实普通QA空SQLite首页输入Adafruit→原worker新联网13应用GET→100有限目录/默认批10→2条真实price+SKU（/product/9 USD2.50和/product/16 USD2.00）自动报告，另8条被严格名称/库存交叉核验拒绝，未追加4864/导入旧样本/请求API。三方库存/市场/数量税运优惠未知，不以0替代。真实报告截图与原始13响应/状态/哈希、SKU scopes、PG日志和准确STOP_DELIVERY_RECEIPT均在.local/live-prices-review-20261022/.local/（0600）。两原队完成停止；QA8007核cwd/命令TERM停、浏览器已退出关闭，无常驻QAworker；main原服务/主库/原账号凭据本轮未动，主网站不随额度停。当前root只合入来源文档至4a8f06f，不含新业务适配，所有旧历史/44b99b5保留。恢复后不重跑未变634全套/不重取当前HTML：先离线诊断保存的8个名称/库存拒绝，再按实际必要修复/专项；继续详情SKU/移动端/失败与候选实际验收，完成后再将准确候选PR31转正式审查合并和统一冷启。当前完整新数据能力未最终验收，不称全店支持或GA。
+
+## 2026-10-22 准确续接与PR30发布
+
+> 2026-10-22 用户额度恢复明确授权后续接：PR30 https://github.com/js1010391212/shophot/pull/30 已真实合并；main/origin36184b9faaa756e5de53c9788d560bf1c7554ea5，remotehead b671c1709be62502c6c4e3a0e5971843739ab374，CI39736138157成功。全tree f1d2db14b98a6ecac0e5a82131c255f73c3bf88f 与本机停止点c2948e4完全一致；根以正常merge 06a8a098e62e1b771ba89c5b171286e497c3e367保留全部本地/远端历史和44b99b5，不reset/stash/强推。本轮仅核精确blob/已有607PG与实际UI收据，无重复全套/主库写入/服务重启。下一按新用户授权推进价格与SKU：原High在独立clone做新合法来源有界实证，原Medium只读盘点现有价格规格契约；先取真实样本再定必要接线，不重派旧目录/覆盖模块。EFF受拒商品/另一商品及绕路继续禁止，未知不补0；具体分工见TEAM_COORDINATION，私有MERGE_RECEIPT见.local/live-directory-publication-20261022。
+
 # ShopHot 开发续接日志
 
 ## 用户约定（2026-10-07）
@@ -791,3 +801,13 @@ High在正式EFF来源取得45条本轮目录，商品HTML429后停，未伪造�
 ## 2026-10-22 本机目录范围实际启用
 
 根正常合并0c7fe9b与最终业务d702e53源码一致；核旧83569/83639/83658 cwd/命令/监听后TERM主管清理，标准start.sh启动session1733/3010/3021/唯一worker3025，迁移无新/check清，登录200+CSRF/guide302/正确tools/profit/studies/compare302。一次helper误用/studies/compare404已更正保留，不修改产品。21表268行前后强制只读指纹相同，无主库QA写入或管理员新建/凭据读取；604初源与606失败及607最终通过准确区分，真实Web取数在5af目录行为、最终d702修范围升级/旧默认兼容，未改来源/网络。QA8006已核停，浏览器tab退出关闭/viewportreset。下一仅远端发布PR/CI/合并和继续解决合法报价来源；当前未推送/新PR，不称完整价格里程碑。
+
+## 2026-10-22 PRICE-HTML-D 本地队详情范围修复
+
+规范 Adafruit 目录商品无报价/失败时按已知来源展示事实范围；图片、描述、评论空状态及刷新提示一致，不伪造商品事实或回写数据。新专项4项与既有18项合计22项通过（隔离SQLite0.375秒），check/迁移/diff清；未联网/动真实库或凭据/重跑634。范围与后续负责人浏览器验收见 PRICE_HTML_D_UI_20261022.md。
+
+## 2026-10-22 PRICE-HTML-E 公共状态展示与 C 独立审查
+
+仅三处公共映射/选项增加 Discontinued → 停止供应，不推断厂家停产或数量；受控专项验证报告、详情、历史、候选一致及筛选仅已观测状态，GET不新增观测/任务或改目录。新3项+受影响既有23项合计26项隔离SQLite0.724秒无skip，check/迁移/diff清。初测试夹具遗漏必填job_id失败已修，原日志保留。
+
+只读精确审查 C618fe96 parser/test/doc，独立无DB网络阻断24专项0.423秒通过；原13正文有界解压hash与审计一致，原来源收据hash一致。所选SKU/控件和真实DOM-schema库存冲突仍拒绝，版本证据完整保留，无可复现P1/P2。早期网络阻断harness误改socket类导致ssl导入失败，已改阻断连接方法，日志保留。无HTTP/主库账号/浏览器/服务操作。详 PRICE_HTML_E_REVIEW_20261022.md，负责人最终集成与真实UI/变更后回归待完成；本队完成停止。
