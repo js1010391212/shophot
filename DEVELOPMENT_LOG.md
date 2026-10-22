@@ -1,3 +1,7 @@
+> 2026-10-22 用户新阶段覆盖准确/闭环已续接实测：PR31已先完成验收合并启用，不重做。原High只读核准同源单件刷新路径边界后停止；负责人隔离QA实际原详情POST→单次run_store_prices，18/1/14/20最多8GET全200，跨任务≥12.1/robots延迟，新增4当前price/SKU，首批独立10目标有效2→6（3停止供应），报告6/100，不冒充第二独立来源。原5/19未选SKU、30/31库存真冲突未请求/继续拒绝；原9/16/首批job/13原body不变。实际SKU18新观测3→候选3→明示成本假设净6.60USD→私有study1已保存，不是实测运费/竞品利润。无公共业务代码变化/旧650重跑/主库或原账号操作；QA8007核33172/cwd命令TERM、tab退出关闭/viewportreset，旧scan2 queued保留未执行。详SECOND_LIVE_PATH_20261022.md、review.local/second-live-path/DELIVERY_RECEIPT与截图。新发现历史UTC分钟时间被报告误标未知，原Medium串行TIME-QUOTE独立clone处理中，仅展示精度解析，负责人后审查/必要回归/上传；当前两队不并发争根/PG/浏览器。
+
+> 2026-10-22 价格/SKU首个有界里程碑已真实交付、合并并本机启用：PR31 main/origin8c491e5289375b7f4ec39f2ff09805e8d98c41b3，remoteheadfc39baecd8e1f36b1eb6c991566ccfb866fe37fd，CI39779402616成功；全tree edc37124372ce29df883d189115d0eed426a8c6e 与review交付7233c97全树一致，根正常合入并保留远端/本地全部历史至e202f5f5349ff7c59485ed7d03ff9f0fba308f4a（启用时全树相同）；其后仅本机交接文档补充未推送。最终业务8c733ad PG650项106.322秒无skip、随机库清理，独立High/Medium交叉审查及实际桌面/390手机/成功失败SKU详情/候选/图表/空筛选过。真实空库首页输入Adafruit→原worker允许13应用GET→100有限目录/2条新price+SKU自动报告；新恢复仅保存数据验收和离线C修复，原实时仍2，离线6/4不回填，4条未选规格/库存冲突仍明确拒绝。D失败facts_only和E停止供应映射已接通。原始压缩体/解压hash核同，API0/无图文评论保存或热链/商业权利未保证。原8000主管3010/web3021/worker3025核cwd命令后完整TERM退出；新session45727/主管31938/web31950/唯一worker31954，同根cwd，迁移无新/check清/登录200CSRF/guide与私有比较302；主21表268行前后强制只读指纹完全相同，无主库QA/新管理员/原凭据读取。QA8007最终29049核TERM、tab退出关闭/viewportreset，原QA库/普通凭据/queued scan2未执行保留，主网站不停。两队完成停止。下步仅明确个人反馈、可执行新允许访问/来源证据或实际维护故障；不为额度恢复重试拒绝/扩平台/ERP/收费/重复旧全套。额度末五小时44%/周25%仅历史，下一实际读，≤5上传准确候选/保存交接一次简报后停。详细验收见LIVE_PRICE_ACCEPTANCE，准确MERGE/RUNTIME/HTTP_SMOKE/BEFORE_DB/AFTER_DB/DELIVERY收据.local/price-release-20261022，原44b99b5及所有旧成果/凭据保留不reset/stash/强推。
+
 > 2026-10-22 价格首里程碑发布前验收通过：最终业务8c733ad7098dc338022c74f07fc2bbdf195734ed，原High C618fe96+审查文档cff974、原Medium D2695/Eb3a83独立交叉审查无可复现P1/P2；最终随机隔离PG650项106.322秒无skip、库清理、check/迁移/diff清。实站原13应用GET/100有限目录/2条price+SKU的输入→报告已真实，恢复后只用保存原数据完成SKU详情、候选成功/失败、桌面/390/价格图/空筛选/范围约束验收；原2观测/13响应不变。离线解析6接受/4拒绝不是新观测，未选规格/真实库存冲突继续拒绝。停止供应展示接线已完成；QA自己的tab退出关闭/viewportreset，8007PID29049核cwd命令TERM；有一个隔离queued刷新scan2保留未跑，无新HTTP。PR31仍待准确上传/CI/合并，主服务仍旧PR30业务未重启，绝不提前称远端/本机新源启用。详LIVE_PRICE_ACCEPTANCE/ADAFRUIT_OFFLINE_DIAGNOSIS/PRICE_HTML_D_UI/PRICE_HTML_E_REVIEW，私有UI_FINAL_RECEIPT/PRICE_PG_RECEIPT_20261022T122931等。两队完成停止，原44b99b5/旧成果/凭据全部保留。
 
 > 2026-10-22 恢复 PRICE-HTML-C/D：PR31仍草稿，review586ed523保持。原High仅在新独立clone离线核保存13份传输原始body（gzip解压后robots/sitemap与PhaseA相同），诊断8拒绝并最小源专用修复/专项；原Medium独立clone仅修已发现Adafruit失败/空项目facts_only展示范围，不碰High文件。负责人已实际补验原保存两条报价的SKU详情、390手机/价格分布/空筛选/有效与失败候选；源13响应hash和2观测不变。QA误触产生隔离scan2 queued、无worker/新外部HTTP、保留证据，非当前实站新数据；UI_RESUME_RECEIPT记录。QA8007已核cwd/命令TERM停，自己tab退出关闭/viewportreset。两队不接触主库/原凭据，负责人协调集成、增量验收与准确PR31发布；不重复634全套。
@@ -811,3 +815,11 @@ High在正式EFF来源取得45条本轮目录，商品HTML429后停，未伪造�
 仅三处公共映射/选项增加 Discontinued → 停止供应，不推断厂家停产或数量；受控专项验证报告、详情、历史、候选一致及筛选仅已观测状态，GET不新增观测/任务或改目录。新3项+受影响既有23项合计26项隔离SQLite0.724秒无skip，check/迁移/diff清。初测试夹具遗漏必填job_id失败已修，原日志保留。
 
 只读精确审查 C618fe96 parser/test/doc，独立无DB网络阻断24专项0.423秒通过；原13正文有界解压hash与审计一致，原来源收据hash一致。所选SKU/控件和真实DOM-schema库存冲突仍拒绝，版本证据完整保留，无可复现P1/P2。早期网络阻断harness误改socket类导致ssl导入失败，已改阻断连接方法，日志保留。无HTTP/主库账号/浏览器/服务操作。详 PRICE_HTML_E_REVIEW_20261022.md，负责人最终集成与真实UI/变更后回归待完成；本队完成停止。
+
+## 2026-10-22 TIME-QUOTE
+
+历史明确UTC分钟报价时间用独立展示helper解析，报告按北京时间和来源精度显示；原moment/时窗/任务/金额/SKU及观测数据不改。3新专项+旧coverage/research共32项隔离SQLite0.649秒无skip，check/迁移/diff清，关键旧helper AST核同。无HTTP/主库凭据/浏览器服务。详TIME_QUOTE_20261022.md，负责人真实六报价验收及最终发布待完成。
+
+## 2026-10-22 TIME-QUOTE P2 时间转换越界
+
+先实际模板复现legacy/ISO/aware上下界5子例OverflowError；显示helper所有路径先核可转Asia/Shanghai，越界未知，不改moment/时窗或报价。新2+本文件旧3=5专项0.084秒通过，check/迁移/diff清；未重32/650，无联网或真实数据操作。详TIME_QUOTE_20261022.md追加段，负责人最终验收待完成，本队停止。

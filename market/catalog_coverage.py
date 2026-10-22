@@ -4,8 +4,9 @@ A processed counter is progress, not successful quotes or a per-request audit.
 Only observations linked to this job count as newly obtained prices. A stopped
 request without a callback remains unknown; it is never labelled unattempted.
 """
-from datetime import datetime
+from datetime import datetime, timezone as datetime_timezone
 import re
+from zoneinfo import ZoneInfo
 from django.core.exceptions import ValidationError
 from django.utils.dateparse import parse_datetime
 from .models import CatalogPriceObservation
@@ -39,6 +40,40 @@ def moment(value):
         return parsed if parsed and parsed.tzinfo is not None else None
     except (ValueError, TypeError, OverflowError):
         return None
+
+
+def quote_display_moment(value):
+    """Display only: explicit timezone and source precision; never job timing."""
+    def displayable(parsed, precision):
+        if parsed is None:
+            return None, ''
+        try:
+            if parsed.utcoffset() is None:
+                return None, ''
+            # Match the actual report's fixed timezone conversion before handing
+            # any legacy, ISO or datetime path to Django's timezone filter.
+            parsed.astimezone(ZoneInfo('Asia/Shanghai'))
+        except (OverflowError, ValueError):
+            return None, ''
+        return parsed, precision
+
+    if isinstance(value, datetime):
+        return displayable(value, 'second')
+    if not isinstance(value, str) or len(value) > 50:
+        return None, ''
+    if re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2} UTC', value):
+        try:
+            parsed = datetime.strptime(value, '%Y-%m-%d %H:%M UTC')
+            return displayable(parsed.replace(tzinfo=datetime_timezone.utc), 'minute')
+        except ValueError:
+            return None, ''
+    iso = re.fullmatch(
+        r'[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}'
+        r'(?P<seconds>:[0-9]{2}(?:[.,][0-9]{1,6})?)?(?:Z|[+-](?:[01][0-9]|2[0-3]):?[0-5][0-9])', value)
+    if not iso:
+        return None, ''
+    parsed = moment(value)
+    return displayable(parsed, 'second' if iso.group('seconds') else 'minute')
 
 
 def _planned_indices(scan, job):
@@ -101,10 +136,11 @@ def build_catalog_coverage(scan, job=None):
             state, label = 'pending', '本批待处理或结果尚未记录'
         else:
             state, label = 'unknown', '本批未取得新报价，逐项结果未记录'
+        seen_at, seen_precision = quote_display_moment(item.get('price_observed_at'))
         item.update(catalog_index=index, coverage_state=state, coverage_label=label,
                     quote_origin='current' if quote else ('historical' if quoted else 'none'),
                     quote_origin_label='本批新报价' if quote else ('沿用已保存报价' if quoted else '无有效报价'),
-                    quote_seen_at=moment(item.get('price_observed_at')), valid_quote=quoted)
+                    quote_seen_at=seen_at, quote_seen_precision=seen_precision, valid_quote=quoted)
         rows.append(item)
         display_items[index] = item
     new = sum(row['coverage_state'] == 'success' for row in rows)
