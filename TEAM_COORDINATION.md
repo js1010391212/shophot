@@ -1,3 +1,19 @@
+## 2026-10-22 新来源已实证，最小HTML适配阶段B
+
+负责人已只读核High原始收据：Adafruit规范商品HTML/product/4864于07:05UTC 200，4.00 USD、明确商家SKU4864/所选Pico without Headers、OutOfStock；07:11UTC HTTPS官方sitemap200、6396链接/1204160字节。API被robots排除，0API请求，HTML用途仅本机最少事实研究；不复制图片/描述，不宣称商业再分发或法律保证，数量阶梯/税运/市场/优惠未知。原通用parser因身份严格拒绝，保留其保护。PhaseA来源说明/收据冻结后做阶段B：
+
+- High独占新增`market/adafruit_catalog.py`/`market/test_adafruit_catalog.py`及来源说明，纯解析与该来源严格URL规范化；函数契约`is_adafruit_store(root)`、`normalize_adafruit_product_url(value)`、`parse_adafruit_price(html,target)`。不导入discovery/catalog_prices，不改共享解析器/模型/worker/路由/transport，不再HTTP；非www Offer仅固定来源离线证据，不扩大实际可请求host。
+- Medium独占`market/discovery.py`、`market/catalog_prices.py`必要薄分派和新`market/test_adafruit_integration.py`：只规范www.adafruit.com店铺启用来源normalizer/parser，原Shopify行为保持；目录原sitemap/100上限、报价原10上限、原安全transport/robots/2MB/不重定向/非200停止保持，来源delay至少12.1秒。等待High准确模块后再做真实模块受控回归，禁止stub冒充已集成；无model/路由/worker/利润/API新能力，无UI重构。
+- 负责人最终独立审查、随机隔离回归与普通用户实际输入→目录→报价→报告/规格验收。新样本不等于产品接通；本机主库和服务不变，所有新QA显式隔离/普通账号。Low库存/缺货不是可购买保证；目录截断不当全量。Medium此前只读审查1774725已正常快进保留，旧成果/凭据不动。
+
+## 2026-10-22 PR30合并后：真实价格/SKU来源任务
+
+发布已完成：main36184b9、CI39736138157成功，全树与c2948e4一致；根正常保留合并06a8a098e62e1b771ba89c5b171286e497c3e367。原两队此前完成停止已核，现按用户新授权派新有界任务，模型保持。
+
+- 原High：独立`.local/live-prices-source-20261022` / `codex/live-prices-source-20261022`，基线本条提交。仅新来源合法访问/价格/SKU真实实证及私有收据、新独立来源文档；先官方许可/公开API用途与robots，最多2个新候选，优先可复用当前公开链路。Adafruit官方产品API可作为新线索，不能预认许可；不重试EFF/旧被拒资源，不改网络/认证/身份/工具来绕拒绝。不碰根/主PG/共享源码，取到样本后先交负责人契约，再授权最小接线。
+- 原Medium：独立`.local/live-prices-reuse-20261022` / `codex/live-prices-reuse-20261022`，同基线。只读盘点现有目录→报价观测→SKU/规格/币种→竞品报告契约，特别多规格不冒充SKU精确价；交最小缺口/复用建议，不开发依赖未验证来源的新系统，不重复旧覆盖/范围P2审查、全套或浏览器验收。High真实样本到后才分配必要代码。
+- 负责人：独占根共享交接/模型路由worker及最终合并、质量验收/实际UI。无ERP/收费/无关UI，原账号/凭据不读不动、业务库无QA写入。额度≤5%先简报保存停止，网站保持。
+
 ## 2026-10-22 本机目录范围交付完成，待远端发布
 
 原High73fe10d与Medium5bb6179/负责人d702e53增量审查均停止。负责人607PG无skip及实际45条新目录Web/1280/390验收通过，根0c7fe9b已标准冷启，主管3010/web3021/唯一worker3025，主库21表268行前后指纹相同，QA8006已停。范围仅真实目录与标题分析；商品HTML/报价429未通过，完整里程碑不称完成。恢复先做精确PR/CI/远端合并的有界收尾，不重派开发、不重复采集被拒资源/全套。

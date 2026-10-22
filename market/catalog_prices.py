@@ -14,6 +14,7 @@ from .validation import clean_price, clean_currency
 from .reviews import product_reviews, widget_review_samples
 from .catalog_content import product_content, plain_text, same_product
 from .robots_policy import load_robots
+from .adafruit_catalog import is_adafruit_store, normalize_adafruit_product_url, parse_adafruit_price
 
 BATCH_SIZE = 10
 
@@ -120,6 +121,9 @@ def parse_catalog_price(html, target):
 
 def collect_catalog_prices(root, items, save, client=None, pause=time.sleep):
     root = store_url(root)
+    adafruit = is_adafruit_store(root)
+    normalize_product = normalize_adafruit_product_url if adafruit else normalize_shopify_url
+    parse_price = parse_adafruit_price if adafruit else parse_catalog_price
     own = client is None
     client = client or httpx.Client(transport=PublicProductTransport(), timeout=20, trust_env=False,
                                    follow_redirects=False, headers={'User-Agent': 'ShopHot/0.3 (public catalog research)'})
@@ -137,9 +141,9 @@ def collect_catalog_prices(root, items, save, client=None, pause=time.sleep):
                         raise CollectionError('公开页面超过 2 MB，本批次已停止。')
                 return bytes(data)
         rules = load_robots(client, root, AGENT)
-        delay = rules.delay
+        delay = max(rules.delay, 12.1) if adafruit else rules.delay
         for index, item in enumerate(items[:BATCH_SIZE]):
-            target = normalize_shopify_url(item['url'])
+            target = normalize_product(item['url'])
             if urlsplit(target).hostname != urlsplit(root).hostname:
                 raise CollectionError('商品目录指向其他域名，本次停止。')
             if not rules.can_fetch(target):
@@ -148,7 +152,7 @@ def collect_catalog_prices(root, items, save, client=None, pause=time.sleep):
             pause(delay)
             html = read(target, html=True)
             try:
-                result = parse_catalog_price(html, target)
+                result = parse_price(html, target)
                 result['price_error'] = ''
             except CollectionError as exc:
                 result = {'price_error': str(exc)}

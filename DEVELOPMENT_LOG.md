@@ -1,3 +1,7 @@
+## 2026-10-22 准确续接与PR30发布
+
+> 2026-10-22 用户额度恢复明确授权后续接：PR30 https://github.com/js1010391212/shophot/pull/30 已真实合并；main/origin36184b9faaa756e5de53c9788d560bf1c7554ea5，remotehead b671c1709be62502c6c4e3a0e5971843739ab374，CI39736138157成功。全tree f1d2db14b98a6ecac0e5a82131c255f73c3bf88f 与本机停止点c2948e4完全一致；根以正常merge 06a8a098e62e1b771ba89c5b171286e497c3e367保留全部本地/远端历史和44b99b5，不reset/stash/强推。本轮仅核精确blob/已有607PG与实际UI收据，无重复全套/主库写入/服务重启。下一按新用户授权推进价格与SKU：原High在独立clone做新合法来源有界实证，原Medium只读盘点现有价格规格契约；先取真实样本再定必要接线，不重派旧目录/覆盖模块。EFF受拒商品/另一商品及绕路继续禁止，未知不补0；具体分工见TEAM_COORDINATION，私有MERGE_RECEIPT见.local/live-directory-publication-20261022。
+
 # ShopHot 开发续接日志
 
 ## 用户约定（2026-10-07）

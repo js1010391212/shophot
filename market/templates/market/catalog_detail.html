@@ -18,7 +18,7 @@
     <a href="{{ item.images.0 }}" target="_blank" rel="noopener noreferrer"><img class="product-main-image" src="{{ item.images.0 }}" alt="{{ title }} 商品图片" referrerpolicy="no-referrer"></a>
     {% if item.images|length > 1 %}<div class="product-thumbnails">{% for image in item.images %}<a href="{{ image }}" target="_blank" rel="noopener noreferrer"><img src="{{ image }}" alt="{{ title }} 图片 {{ forloop.counter }}" loading="lazy" referrerpolicy="no-referrer"></a>{% endfor %}</div>{% endif %}
     <small class="muted">原店铺公开图片 · 点击查看原图</small>
-    {% else %}<div class="product-image-empty">尚未取得商品图片<p class="muted">可点击“更新当前商品”读取公开内容</p></div>{% endif %}
+    {% elif item.content_policy == "facts_only" %}<div class="product-image-empty">本来源仅记录商品事实<p class="muted">不保存或热链商品图片；可查看原店铺页面。</p></div>{% else %}<div class="product-image-empty">尚未取得商品图片<p class="muted">可点击“更新当前商品”读取公开内容</p></div>{% endif %}
   </div>
   <div>
     <h2>公开报价与库存</h2>
@@ -32,7 +32,7 @@
 </section>
 <section class="card"><h2>商品描述</h2>
   {% if item.description %}<details class="product-description" open><summary>查看店铺原始描述</summary><p>{{ item.description|linebreaksbr }}</p></details>{% if item.description_limited %}<p class="muted">描述仅保留前 6000 个字符，完整内容请查看原商品页面。</p>{% endif %}
-  {% else %}<p class="muted">尚未取得描述。更新当前商品后，可读取页面明确提供的内容。</p>{% endif %}
+  {% elif item.content_policy == "facts_only" %}<p class="muted">本来源仅记录身份、所选规格、价格、币种与库存标注，不保存商品描述；更新仍保持此范围。</p>{% else %}<p class="muted">尚未取得描述。更新当前商品后，可读取页面明确提供的内容。</p>{% endif %}
 </section>
 <section class="card" id="product-variants"><h2>公开规格与报价</h2>
   <p class="muted">只展示页面明确提供的规格，库存为页面标注。价格范围不作为单一规格成交价。</p>
