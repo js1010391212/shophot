@@ -214,7 +214,7 @@ def analyze_competitor(request):
             return start_browser_research(request, url, platform)
         if form.cleaned_data['platform'] == 'Shopify' and urlsplit(url).path in ('', '/'):
             from .workflows import start_store_analysis
-            scan=start_store_analysis(url)
+            scan=start_store_analysis(url, include_prices={'catalog':False,'prices':True}.get(form.cleaned_data.get('scope')))
             if scan.status == 'succeeded':
                 messages.info(request,'已打开保存的店铺报告；数据时间可在报告中查看，并可继续采集。')
             return redirect('store_analysis',pk=scan.pk)
@@ -287,7 +287,7 @@ def discover_store(request):
     if form.is_valid():
         if request.POST.get('workflow') == '1':
             from .workflows import start_store_analysis
-            return redirect('store_analysis',pk=start_store_analysis(form.cleaned_data['url'],refresh=True).pk)
+            return redirect('store_analysis',pk=start_store_analysis(form.cleaned_data['url'],refresh=True,include_prices=form.cleaned_data.get('scope') != 'catalog').pk)
         return queue_store_discovery(request, form.cleaned_data['url'])
     return render(request, 'market/store_discovery_form.html', {'form': form}, status=400)
 
@@ -338,6 +338,9 @@ def collect_store_prices(request, pk):
 
 @login_required
 def keyword_research(request, pk=None):
+    from types import SimpleNamespace
+    from .models import StorePriceJob
+    from .catalog_coverage import build_catalog_coverage
     from .research import build_research
     from .forms import ResearchFilterForm
     scans = list(StoreDiscovery.objects.filter(status='succeeded').filter(
@@ -354,10 +357,17 @@ def keyword_research(request, pk=None):
         else:
             return render(request, 'market/research.html', {'scans': []})
     scan = get_object_or_404(StoreDiscovery, pk=pk, status='succeeded')
-    context = build_research(scan)
+    active_discovery = StoreDiscovery.objects.filter(url=scan.url,status__in=['queued','running']).first()
+    active_prices = StorePriceJob.objects.filter(discovery__url=scan.url,status__in=['queued','running']).first()
+    refresh_progress_pk = active_discovery.pk if active_discovery else (active_prices.discovery_id if active_prices else None)
+    report_job = scan.price_jobs.first()
+    report_coverage = build_catalog_coverage(scan, report_job)
+    previous_report = StoreDiscovery.objects.filter(url=scan.url,status='succeeded',created_at__lt=scan.created_at).first() if report_job and report_job.status not in ('queued','running') and (report_job.status=='failed' or not report_coverage['new_count']) else None
+    report_scan = SimpleNamespace(url=scan.url, products=report_coverage['items'])
+    context = build_research(report_scan)
     form = ResearchFilterForm(request.GET, currencies=context['currencies'])
     if form.is_valid():
-        context = build_research(scan, **form.cleaned_data)
+        context = build_research(report_scan, **form.cleaned_data)
     else:
         context.update(products=[], matched_count=0, distribution=[], matched_priced_count=0,
                        tree_data={'name': scan.url, 'children': []})
@@ -365,7 +375,7 @@ def keyword_research(request, pk=None):
     params.pop('term', None)
     params.pop('store', None)
     return render(request, 'market/research.html', {**context, 'scan': scan, 'scans': scans,
-        'filter_form': form, 'filter_query': params.urlencode(), 'report_job':scan.price_jobs.first(),
+        'filter_form': form, 'filter_query': params.urlencode(), 'report_job':report_job, 'report_coverage':report_coverage, 'refresh_progress_pk':refresh_progress_pk, 'previous_report':previous_report,
         'pending_count':sum(not p.get('price_observed_at') and not p.get('price_attempted_at') for p in scan.products),
         'price_job_active':scan.price_jobs.filter(status__in=['queued','running']).exists()})
 

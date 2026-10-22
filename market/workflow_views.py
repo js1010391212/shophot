@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 from .models import StoreDiscovery, Product
+from .catalog_coverage import build_catalog_coverage, coverage_message
 
 
 def progress_response(request, data):
@@ -24,23 +25,31 @@ def store_analysis(request, pk):
     scan=get_object_or_404(StoreDiscovery,pk=pk)
     job=scan.price_jobs.first()
     status=scan.status
+    coverage=build_catalog_coverage(scan,job)
     title='正在发现店铺商品'
-    message='读取公开目录，完成后自动采集首批最多 10 件商品。'
+    message=('读取公开目录，完成后自动采集首批最多 10 件商品。' if scan.analyze_prices else '读取公开商品目录，完成后直接生成目录分析报告；本次不请求商品详情或报价。')
     if status == 'succeeded':
         status=job.status if job else 'succeeded'
-        title='正在整理首批商品数据'
-        message=f'已发现 {len(scan.products)} 件商品。'+(f'本批完成 {job.processed} / {job.total} 件。' if job else '')
+        title=coverage['title']
+        message=coverage_message(coverage)
     failed=status == 'failed'
-    redirect_url=reverse('store_research',args=[pk]) if scan.status == 'succeeded' and status not in ('queued','running') and scan.products else ''
-    if failed:
+    active=status in ('queued','running')
+    redirect_url=reverse('store_research',args=[pk]) if scan.status == 'succeeded' and not active and coverage['total_count'] else ''
+    if scan.status == 'failed':
         title='暂时无法完成分析'
-        message=(job.message if scan.status == 'succeeded' and job else scan.message) or '请稍后重试。'
-    elif scan.status == 'succeeded' and not scan.products:
+        message=scan.message or '公开目录获取失败，请稍后重试。'
+    elif scan.status == 'succeeded' and not coverage['total_count']:
         title='没有发现可分析的公开商品'
-        message='当前公开目录没有返回商品，可以重新分析或换一个店铺链接。'
-    data={'title':title,'message':message,'active':status in ('queued','running'),'redirect_url':redirect_url}
+        message='没有可识别的公开商品链接；不代表店铺没有商品，可以重新分析或换一个店铺链接。'
+        active=False
+    elif failed and job:
+        message += ' '+(job.message or '本批报价任务失败，已保存报价仍保留。')
+    previous_report = StoreDiscovery.objects.filter(url=scan.url,status='succeeded').exclude(pk=scan.pk).first() if scan.status=='failed' else None
+    data={'title':title,'message':message,'active':active,'redirect_url':redirect_url,
+          'coverage':{key:coverage[key] for key in ('state','total_count','new_count','failed_count','unresolved_count','not_scheduled_count','historical_count','quoted_count','limited')}}
     if request.GET.get('format') != 'json':
-        data.update(url=scan.url,store=scan,failed=failed,poll_url=reverse('store_analysis',args=[pk])+'?format=json',
+        data.update(url=scan.url,store=scan,failed=failed,previous_report=previous_report,poll_url=reverse('store_analysis',args=[pk])+'?format=json',
+                    report_coverage=coverage if scan.status == 'succeeded' else None,
                     step='prices' if scan.status == 'succeeded' else 'directory')
     return progress_response(request,data)
 

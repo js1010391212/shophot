@@ -4,8 +4,9 @@ from collections import Counter
 from urllib.parse import urlsplit
 from decimal import Decimal, ROUND_CEILING
 from django.core.exceptions import ValidationError
-from .validation import clean_price, clean_rating, clean_count
+from .validation import clean_rating, clean_count
 from .review_analysis import analyze_reviews
+from .catalog_coverage import quote_values, valid_currency
 
 AVAILABILITY = {'InStock':'有货','OutOfStock':'缺货','SoldOut':'售罄',
                 'PreOrder':'预售','BackOrder':'可延期订购','Mixed':'不同规格状态不同'}
@@ -62,20 +63,17 @@ def build_research(scan, term='', currency='', *, q='', price_min=None, price_ma
     products = []
     seen = set()
     for catalog_index, item in enumerate(scan.products):
-        if item.get('url') in seen or not item.get('url'):
+        if not isinstance(item,dict) or not isinstance(item.get('url'),str) or item.get('url') in seen or not item.get('url'):
             continue
         seen.add(item['url'])
         title = item.get('price_title') or item.get('title') or ''
-        low = numeric(item.get('price_low'), clean_price) if item.get('price_observed_at') else None
-        high = numeric(item.get('price_high'), clean_price) if item.get('price_observed_at') else None
-        if high is None or low is None or high < low:
-            low = high = None
+        low, high = quote_values(item)
         state = item.get('availability') if item.get('price_observed_at') else None
         state = state if state in AVAILABILITY else 'unknown'
         sample_count = analyze_reviews(item)['sample_count']
         products.append({**item, 'display_title': title, 'catalog_index': catalog_index, 'terms': title_terms(title, scan.url),
                          'inventory_state':state, 'inventory_label':AVAILABILITY.get(state,'未知'),
-                         'review_sample_count':sample_count,
+                         'review_sample_count':sample_count, 'valid_quote':low is not None,
                          '_low':low, '_high':high, '_rating':numeric(item.get('rating'), clean_rating),
                          '_reviews':numeric(item.get('review_count'), clean_count),
                          'has_rating': numeric(item.get('rating'), clean_rating) is not None,
@@ -84,7 +82,7 @@ def build_research(scan, term='', currency='', *, q='', price_min=None, price_ma
     count = len(products)
     keywords = [{'term': word, 'count': freq, 'share': round(freq * 100 / count, 1)}
                 for word, freq in sorted(frequencies.items(), key=lambda pair: (-pair[1], pair[0]))]
-    currencies = sorted({p['currency'] for p in products if p.get('price_observed_at') and p.get('currency')})
+    currencies = sorted({p['currency'] for p in products if p.get('price_observed_at') and valid_currency(p.get('currency'))})
     filtered = [p for p in products if (not term or term in p['terms']) and (not currency or p.get('currency') == currency)]
     filtered = [p for p in filtered if (not q or q.casefold() in p['display_title'].casefold())
                 and (not availability or p['inventory_state'] == availability)
@@ -114,7 +112,7 @@ def build_research(scan, term='', currency='', *, q='', price_min=None, price_ma
         for word, children in sorted(groups.items(), key=lambda pair: (-len(pair[1]), pair[0]))]}
     return {'products': filtered, 'keywords': keywords[:40], 'keyword_count': len(keywords),
             'total_count': count, 'matched_count': len(filtered), 'currencies': currencies,
-            'priced_count': sum(bool(p.get('price_observed_at')) for p in products),
+            'priced_count': sum(p['_low'] is not None for p in products),
             'tree_data': tree, 'tree_height': max(420, min(1100, len(filtered) * 24)),
             'distribution': price_distribution(filtered),
             'matched_priced_count': sum(p['_low'] is not None for p in filtered),
