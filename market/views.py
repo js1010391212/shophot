@@ -383,12 +383,17 @@ def keyword_research(request, pk=None):
 def _catalog_facts_only(scan, item):
     """Display scope is known before a quote succeeds; never amend stored facts."""
     from .adafruit_catalog import is_adafruit_store, normalize_adafruit_product_url
+    from .pololu_catalog import is_pololu_store, normalize_pololu_product_url
     if item.get('content_policy') == 'facts_only':
         return True
-    if not is_adafruit_store(scan.url):
+    if is_adafruit_store(scan.url):
+        normalize_product = normalize_adafruit_product_url
+    elif is_pololu_store(scan.url):
+        normalize_product = normalize_pololu_product_url
+    else:
         return False
     try:
-        normalize_adafruit_product_url(item.get('url'))
+        normalize_product(item.get('url'))
     except ValidationError:
         return False
     return True
