@@ -5,6 +5,9 @@ from django.core.exceptions import ValidationError
 from django.db.models import OuterRef, Subquery
 from .models import StoreDiscovery
 from .research import build_research, sort_products
+from .pololu_catalog import is_pololu_store, normalize_pololu_product_url
+from .catalog_coverage import quote_display_moment
+from .validation import clean_price
 
 
 def latest_catalogs():
@@ -12,12 +15,41 @@ def latest_catalogs():
         StoreDiscovery.objects.filter(url=OuterRef('url'),status='succeeded').order_by('-created_at','-pk').values('pk')[:1]))[:30])
 
 
+def comparison_terms(scan, row):
+    """Display scope only: missing historical producer evidence stays unknown."""
+    quantity = '数量条件未知；不能从规格条数推断件数。'
+    try:
+        target = normalize_pololu_product_url(row.get('url'))
+        variants = row.get('variants')
+        if (is_pololu_store(scan.url) and row.get('content_policy') == 'facts_only'
+                and row.get('price_source') == target == row.get('content_source')
+                and row.get('currency') == 'USD' and row.get('_low') is not None
+                and row.get('_low') == row.get('_high')
+                and quote_display_moment(row.get('price_observed_at'))[0] is not None
+                and row.get('sku') == target.rsplit('/', 1)[-1]
+                and row.get('availability') == 'InStock'
+                and not row.get('variants_limited') and isinstance(variants, list)
+                and len(variants) == 1 and isinstance(variants[0], dict)):
+            variant = variants[0]
+            if (variant.get('url') == target and variant.get('sku') == row['sku']
+                    and variant.get('currency') == 'USD' and variant.get('availability') == 'InStock'
+                    and variant.get('is_range') is False and variant.get('size') == ''
+                    and variant.get('color') == ''
+                    and clean_price(variant.get('price_low')) == row['_low']
+                    and clean_price(variant.get('price_high')) == row['_high']):
+                quantity = '当前适配核验范围：数量 1 的 USD 单件价，不计批量阶梯优惠；历史记录未独立保存数量字段。'
+    except (ValidationError, TypeError, ValueError):
+        pass
+    return {'comparison_quantity_note': quantity,
+            'comparison_inventory_note': '库存为来源页面标注；库存数量未知，不保证现货或履约。'}
+
+
 def catalog_rows(scans, filters=None):
     filters=filters or {}
     result=[]
     for scan in scans:
         for row in build_research(scan, **filters)['products']:
-            result.append({**row,'scan_pk':scan.pk,'store_url':scan.url,'store_name':urlsplit(scan.url).hostname,
+            result.append({**row, **comparison_terms(scan, row), 'scan_pk':scan.pk,'store_url':scan.url,'store_name':urlsplit(scan.url).hostname,
                            'selection_id':f'{scan.pk}:{row["catalog_index"]}', 'valid_quote':row['_low'] is not None and bool(row.get('currency'))})
     sort_products(result,filters.get('sort','catalog'),filters.get('currency',''))
     return result
